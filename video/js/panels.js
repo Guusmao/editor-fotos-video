@@ -107,6 +107,12 @@ const visualClipsAll = () => A.project.tracks.flatMap(t => t.kind === 'main' || 
 const TOOLS_ROOT = [
   ['＋', 'Mídia', () => openPanel('media')],
   ['♪', 'Áudio', () => openPanel('audio')],
+  ['⏩', 'Velocidade', () => {
+    const tr = mainTrack();
+    const c = tr.clips.find(x => A.t >= x.start && A.t < x.start + x.dur) || tr.clips[0];
+    if (!c) return A.toast('Adicione um vídeo primeiro.');
+    A.sel = c.id; A.renderTimeline(); buildTools(); A.markDirty(); openPanel('speed');
+  }],
   ['T', 'Texto', () => addText()],
   ['💬', 'Legendas', () => openPanel('captions')],
   ['😀', 'Figurinhas', () => openPanel('stickers')],
@@ -403,6 +409,8 @@ function voiceModal() {
 }
 
 PANELS.captions = () => openSheet('Legendas', (b) => {
+  captionLookUI(b);
+  btnRow(b, btn('＋ Legenda no cursor', () => { closeSheet(); addText({ content: 'Legenda', y: 0.78, text: captionStyle(), extra: { caption: true, animIn: { type: 'none', dur: 0.3 } } }); }, 'accent'));
   sub(b, 'Automáticas (IA no aparelho)');
   note(b, 'Reconhece a fala do vídeo e cria as legendas sozinho. Na primeira vez baixa o modelo de voz (rápido ≈ 45 MB, preciso ≈ 80 MB) e depois fica guardado. Nada sai do seu aparelho.');
   const cfg = { model: 'Xenova/whisper-base', lang: 'portuguese', words: 4, music: false, karaoke: true };
@@ -442,17 +450,34 @@ PANELS.captions = () => openSheet('Legendas', (b) => {
   }, 'accent');
   btnRow(b, go);
   b.append(prog, status);
-  sub(b, 'Manual');
+  sub(b, 'Arquivo de legendas');
   btnRow(b,
-    btn('＋ Legenda no cursor', () => addText({ content: 'Legenda', y: 0.78, text: captionStyle(), extra: { caption: true, animIn: { type: 'none', dur: 0.3 } } })),
     btn('Importar .srt', () => $('fileSrt').click()),
     btn('Baixar .srt', () => exportSrt()),
   );
   btnRow(b, btn('Apagar todas as legendas', () => { for (const tr of A.project.tracks) tr.clips = tr.clips.filter(c => !c.caption); A.sel = null; A.changed(); A.toast('Legendas apagadas.'); }, 'danger small'));
 }, 'captions');
 
+const CAPTION_LOOKS = ['Impacto amarelo', 'Impacto branco', 'Contorno', 'Faixa escura'];
 function captionStyle() {
-  return { font: FONTS[1].id, size: 64, color: '#ffffff', bold: true, stroke: 6, strokeColor: '#000000', bg: 'none', shadow: 0.3, hiColor: '#ffe23d' };
+  const P = A.project;
+  const look = TEXT_STYLES.find(t => t.name === (P.capLook || 'Contorno'));
+  return { font: FONTS[1].id, size: 64, color: '#ffffff', bold: true, stroke: 6, strokeColor: '#000000', bg: 'none', shadow: 0.3, hiColor: '#ffe23d', ...(look ? look.s : {}), size: P.capSize || 64 };
+}
+const allCaptions = () => A.project.tracks.flatMap(t => t.clips.filter(c => c.caption));
+function captionLookUI(b) {
+  const P = A.project;
+  sub(b, 'Visual das legendas (vale para todas)');
+  grid(b, TEXT_STYLES.filter(t => CAPTION_LOOKS.includes(t.name)), st => (P.capLook || 'Contorno') === st.name, (st) => {
+    P.capLook = st.name;
+    for (const c of allCaptions()) { const keep = { content: c.text.content, karaoke: c.text.karaoke, align: c.text.align, lineHeight: c.text.lineHeight }; c.text = { ...captionStyle(), ...keep }; }
+    live(true);
+  }, (el, st) => {
+    const bg = st.s.bg && st.s.bg !== 'none' ? st.s.bg : 'transparent';
+    el.appendChild(h('b', { style: `font-size:16px;font-weight:800;${st.s.italic ? 'font-style:italic;' : ''}color:${st.s.color};background:${bg};padding:2px 6px;border-radius:4px;${st.s.stroke ? `-webkit-text-stroke:1px ${st.s.strokeColor}` : ''}` }, 'Aa'));
+    el.appendChild(h('span', {}, st.name));
+  });
+  slider(b, 'Tamanho', 24, 160, 1, () => P.capSize || 64, v => { P.capSize = v; for (const c of allCaptions()) c.text.size = v; }, v => Math.round(v / 64 * 100) + '%');
 }
 function makeCaptions(chunks, cfg) {
   const items = [];
@@ -559,6 +584,11 @@ PANELS.speed = needSel((c, tr) => openSheet('Velocidade', (b) => {
   const g = h('div', { class: 'grid tight' });
   for (const v of [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4]) g.appendChild(h('button', { class: 'opt', onclick: () => { setSpeed(v); s.value = v; s.dispatchEvent(new Event('input')); A.refreshAll(); } }, fmt(v)));
   b.appendChild(g);
+  if (tr.kind === 'main' && tr.clips.length > 1) btnRow(b, btn('Aplicar a todos os clipes do vídeo', () => {
+    const v = c.speed;
+    for (const x of tr.clips) if (x !== c && x.type === 'video') { const r = x.speed / v; x.speed = v; x.dur *= r; if (x.kf) x.kf.forEach(k => k.t *= r); x.dur = Math.min(x.dur, mediaMaxDur(x)); }
+    packMain(); A.refreshAll(); A.commit(); A.toast('Velocidade ' + fmt(v) + ' em todos os vídeos.');
+  }));
   note(b, `Duração no vídeo final: ${c.dur.toFixed(1)} s. O tom da voz é preservado quando o navegador permite.`);
 }, 'clip:speed'));
 
