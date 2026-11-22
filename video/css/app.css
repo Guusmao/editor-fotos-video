@@ -102,10 +102,44 @@ textarea { width: 100%; resize: vertical; min-height: 70px; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 4px 16px; }
 .sheet-head h3 { margin: 0; font-size: 15px; }
 .sheet-body { overflow: auto; padding: 4px 16px 18px; }
+/* Biblioteca (só no computador) e abas de propriedades */
+.lib { display: none; }
+.sheet-tabs { display: none; }
 @media (min-width: 900px) {
-  .sheet { left: auto; right: 12px; bottom: 12px; top: 64px; width: 360px; max-height: none; border-radius: 16px; border: 1px solid var(--line); transform: translateX(110%); }
+  :root { --tl-h: clamp(200px, 30vh, 320px); }
+  #app {
+    display: grid;
+    grid-template-columns: minmax(300px, 25vw) 1fr minmax(320px, 26vw);
+    grid-template-rows: auto 1fr auto auto var(--tl-h);
+    grid-template-areas: "top top top" "lib stage props" "lib transport props" "tools tools tools" "tl tl tl";
+    gap: 6px; padding: 0 6px 6px; background: #0e0c09;
+  }
+  .top { grid-area: top; margin: 0 -6px; }
+  .stage { grid-area: stage; border-radius: 12px 12px 0 0; border: 1px solid var(--line); border-bottom: 0; }
+  .transport { grid-area: transport; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; background: var(--panel); }
+  .timeline { grid-area: tl; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .tools { grid-area: tools; border: 1px solid var(--line); border-radius: 12px; padding: 2px 6px; background: var(--panel); min-height: 44px; align-items: center; }
+  .tools .tool { flex-direction: row; min-width: 0; gap: 6px; font-size: 12px; padding: 6px 10px; }
+  .tools .tool i { font-size: 15px; height: auto; }
+  .tools .tool-hint { color: var(--muted); font-size: 12px; padding: 0 10px; }
+  .lib { grid-area: lib; display: flex; flex-direction: column; min-height: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .lib-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px; border-bottom: 1px solid var(--line); }
+  .lib-tabs button { flex: 1 0 18%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 10px; font-size: 11px; color: var(--muted); }
+  .lib-tabs button i { font-style: normal; font-size: 17px; color: var(--text); }
+  .lib-tabs button.on { background: var(--panel2); color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+  .lib-body { flex: 1; overflow: auto; padding: 4px 14px 16px; }
+  .lib-body h3 { font-size: 14px; margin: 10px 0 4px; }
+  .sheet { position: static; grid-area: props; transform: none; max-height: none; min-height: 0; width: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: none; transition: none; padding-bottom: 0; overflow: hidden; }
+  .sheet-body { flex: 1; min-height: 0; }
+  .track { height: 48px; } .track.main { height: 64px; }
   .sheet.on { transform: none; }
-  :root { --tl-h: 240px; }
+  .sheet-tabs { display: flex; gap: 2px; overflow-x: auto; padding: 6px 6px 0; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
+  .sheet-tabs:empty { display: none; }
+  .sheet-tabs button { flex: 0 0 auto; padding: 8px 10px; font-size: 12px; color: var(--muted); border-radius: 8px 8px 0 0; }
+  .sheet-tabs button.on { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+  .sheet-tabs button:hover { color: var(--text); }
+  #sheetClose { display: none; }
+  .sheet-empty { color: var(--muted); font-size: 13px; padding: 20px 4px; }
 }
 
 .row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }

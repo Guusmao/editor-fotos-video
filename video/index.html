@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@500;700&family=Lobster&family=Montserrat:wght@400;800&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:wght@400;800&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@500;700&family=Lobster&family=Montserrat:ital,wght@0,400;0,800;1,800;1,900&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:wght@400;800&family=Space+Mono:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -63,15 +63,21 @@
   </section>
 
   <nav class="tools" id="tools"></nav>
+  <aside class="lib" id="lib">
+    <nav class="lib-tabs" id="libTabs"></nav>
+    <div class="lib-body"><h3 id="libTitle"></h3><div id="libBody"></div></div>
+  </aside>
+
+  <div class="sheet" id="sheet" aria-hidden="true">
+    <nav class="sheet-tabs" id="sheetTabs"></nav>
+    <div class="sheet-head">
+      <h3 id="sheetTitle"></h3>
+      <button class="icon" id="sheetClose" title="Fechar">✕</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
 </div>
 
-<div class="sheet" id="sheet" aria-hidden="true">
-  <div class="sheet-head">
-    <h3 id="sheetTitle"></h3>
-    <button class="icon" id="sheetClose" title="Fechar">✕</button>
-  </div>
-  <div class="sheet-body" id="sheetBody"></div>
-</div>
 
 <div class="modal" id="modal" aria-hidden="true">
   <div class="modal-card" id="modalCard"></div>

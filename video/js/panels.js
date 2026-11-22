@@ -25,20 +25,54 @@ let currentPanel = null;
 let panelSel = null;
 
 // ---------- folha ----------
+const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
+A.isDesktop = isDesktop;
+const LIB = [['＋', 'Mídia', 'media'], ['♪', 'Áudio', 'audio'], ['T', 'Texto', 'texts'], ['😀', 'Figurinhas', 'stickers'], ['💬', 'Legendas', 'captions'], ['⧉', 'Sobrepor', 'overlay'], ['🎨', 'Filtros', 'filters-all'], ['▭', 'Proporção', 'aspect'], ['◧', 'Fundo', 'bg']];
+let libPanel = 'media';
+let propTabs = [];
 function openSheet(title, build, name) {
+  if (isDesktop() && LIB.some(l => l[2] === name)) {
+    // no computador, os recursos gerais ficam no painel da esquerda
+    libPanel = name;
+    $('libTitle').textContent = title;
+    const lb = $('libBody');
+    lb.innerHTML = '';
+    build(lb);
+    for (const b of $('libTabs').children) b.classList.toggle('on', b.dataset.p === name);
+    return;
+  }
   currentPanel = name || title;
   panelSel = A.sel;
   $('sheetTitle').textContent = title;
   const body = $('sheetBody');
   body.innerHTML = '';
   build(body);
+  renderPropTabs();
   $('sheet').classList.add('on');
   $('sheet').setAttribute('aria-hidden', 'false');
 }
+function renderPropTabs() {
+  const el = $('sheetTabs');
+  el.innerHTML = '';
+  if (!isDesktop() || !A.sel) return;
+  for (const [label, name] of propTabs) el.appendChild(h('button', { class: currentPanel === 'clip:' + name || currentPanel === name ? 'on' : '', onclick: () => openPanel(name) }, label));
+}
 export function closeSheet() {
   currentPanel = null;
+  if (isDesktop()) {
+    $('sheetTitle').textContent = 'Propriedades';
+    $('sheetTabs').innerHTML = '';
+    $('sheetBody').innerHTML = '<p class="sheet-empty">Toque num clipe da linha do tempo (ou na prévia) para editar: velocidade, texto, tamanho, filtros, animação e mais.<br><br>Use o painel da esquerda para adicionar mídia, áudio, textos, legendas e figurinhas.</p>';
+    return;
+  }
   $('sheet').classList.remove('on');
   $('sheet').setAttribute('aria-hidden', 'true');
+}
+function buildLib() {
+  const tabs = $('libTabs');
+  tabs.innerHTML = '';
+  for (const [icon, label, name] of LIB) tabs.appendChild(h('button', { 'data-p': name, onclick: () => openPanel(name) }, h('i', {}, icon), label));
+  if (isDesktop()) openPanel(libPanel);
 }
 function modal(build) {
   const card = $('modalCard');
@@ -126,41 +160,51 @@ export function buildTools() {
   const bar = $('tools');
   bar.innerHTML = '';
   const add = (icon, label, fn, cls = '') => bar.appendChild(h('button', { class: 'tool ' + cls, onclick: fn }, h('i', {}, icon), label));
+  const desk = isDesktop();
+  propTabs = [];
+  const addP = (icon, label, name) => { if (desk) propTabs.push([label, name]); else add(icon, label, () => openPanel(name)); };
   const f = selected();
   if (!f) {
+    if (desk) {
+      add('✂', 'Dividir no cursor', () => ops.split());
+      if (A.canInstall) add('⬇', 'Instalar', async () => { await A.install(); buildTools(); });
+      bar.appendChild(h('span', { class: 'tool-hint' }, 'Selecione um clipe para editar. Adicione mídia, textos e legendas pelo painel da esquerda.'));
+      if (!currentPanel || currentPanel.startsWith('clip:')) closeSheet();
+      return;
+    }
     for (const t of TOOLS_ROOT) add(...t);
     if (A.canInstall) add('⬇', 'Instalar', async () => { await A.install(); buildTools(); });
     if (currentPanel && currentPanel.startsWith('clip:')) closeSheet();
     return;
   }
   const c = f.clip, tr = f.track;
-  add('‹', 'Voltar', () => { A.sel = null; A.renderTimeline(); buildTools(); A.markDirty(); closeSheet(); }, 'back');
+  if (!desk) add('‹', 'Voltar', () => { A.sel = null; A.renderTimeline(); buildTools(); A.markDirty(); closeSheet(); }, 'back');
   add('✂', 'Dividir', () => ops.split());
   if (c.type === 'text') {
-    add('✎', 'Editar', () => openPanel('text'));
-    add('Aa', 'Estilo', () => openPanel('textstyle'));
+    addP('✎', 'Editar', 'text');
+    addP('Aa', 'Estilo', 'textstyle');
   }
   if (isVisual(c) || c.type === 'audio') {
-    add('⏩', 'Velocidade', () => openPanel('speed'));
+    addP('⏩', 'Velocidade', 'speed');
   }
-  if (c.type === 'video' || c.type === 'audio') add('🔊', 'Volume', () => openPanel('volume'));
+  if (c.type === 'video' || c.type === 'audio') addP('🔊', 'Volume', 'volume');
   if (isVisual(c)) {
-    add('🎨', 'Filtros', () => openPanel('filters'));
-    add('☀', 'Ajustes', () => openPanel('adjust'));
+    addP('🎨', 'Filtros', 'filters');
+    addP('☀', 'Ajustes', 'adjust');
   }
-  if (c.type !== 'audio') add('✨', 'Efeitos', () => openPanel('effects'));
-  if (tr.kind === 'main' && f.index > 0) add('⧓', 'Transição', () => openPanel('transition'));
+  if (c.type !== 'audio') addP('✨', 'Efeitos', 'effects');
+  if (tr.kind === 'main' && f.index > 0) addP('⧓', 'Transição', 'transition');
   if (c.type !== 'audio') {
-    add('➚', 'Animação', () => openPanel('anim'));
-    add('✥', 'Transformar', () => openPanel('transform'));
-    add('◆', 'Keyframes', () => openPanel('keyframes'));
+    addP('➚', 'Animação', 'anim');
+    addP('✥', 'Transformar', 'transform');
+    addP('◆', 'Keyframes', 'keyframes');
   }
   if (isVisual(c)) {
-    add('⌗', 'Recortar', () => openPanel('crop'));
-    add('👤', 'Remover fundo', () => openPanel('cutout'));
-    add('◑', 'Máscara', () => openPanel('mask'));
+    addP('⌗', 'Recortar', 'crop');
+    addP('👤', 'Remover fundo', 'cutout');
+    addP('◑', 'Máscara', 'mask');
   }
-  if (tr.kind === 'overlay' || c.type === 'text' || c.type === 'shape') add('◐', 'Mesclar', () => openPanel('blend'));
+  if (tr.kind === 'overlay' || c.type === 'text' || c.type === 'shape') addP('◐', 'Mesclar', 'blend');
   if (c.type === 'video') {
     add('❄', 'Congelar', () => ops.freeze());
     add('♫', 'Separar áudio', () => ops.detach());
@@ -172,6 +216,14 @@ export function buildTools() {
   }
   add('⧉', 'Duplicar', () => ops.dup());
   add('🗑', 'Excluir', () => ops.del(), 'danger');
+  if (desk) {
+    if (!currentPanel || !currentPanel.startsWith('clip:') || panelSel !== A.sel) {
+      const name = currentPanel && currentPanel.startsWith('clip:') ? currentPanel.slice(5) : null;
+      const def = c.type === 'text' ? 'text' : c.type === 'audio' ? 'volume' : c.type === 'video' ? 'speed' : 'transform';
+      openPanel(name && PANELS[name] && panelFits(name, c, tr) ? name : def);
+    } else renderPropTabs();
+    return;
+  }
   if (currentPanel && currentPanel.startsWith('clip:') && panelSel !== A.sel) {
     // reabre o painel atual para o novo clipe selecionado, se fizer sentido
     const name = currentPanel.slice(5);
@@ -337,6 +389,16 @@ async function addSolid(col) {
   const m = await A.importBlob(blob, 'Cor ' + col, 'image');
   if (m) { const c = baseClip('image', { mediaId: m.id, dur: 3, fit: 'cover' }); const tr = mainTrack(); tr.clips.push(c); A.sel = c.id; A.changed(); closeSheet(); }
 }
+
+PANELS.texts = () => openSheet('Texto', (b) => {
+  btnRow(b, btn('＋ Adicionar texto', () => addText(), 'accent'));
+  sub(b, 'Estilos prontos (toque para adicionar)');
+  grid(b, TEXT_STYLES, () => false, (st) => addText({ text: { ...st.s } }), (el, st) => {
+    const bg = st.s.bg && st.s.bg !== 'none' ? st.s.bg : 'transparent';
+    el.appendChild(h('b', { style: `font-size:18px;font-weight:800;${st.s.italic ? 'font-style:italic;' : ''}${st.s.font ? `font-family:${st.s.font};` : ''}color:${st.s.color};background:${bg};padding:2px 6px;border-radius:4px;${st.s.stroke ? `-webkit-text-stroke:1px ${st.s.strokeColor}` : ''}` }, 'Texto'));
+    el.appendChild(h('span', {}, st.name));
+  });
+}, 'texts');
 
 PANELS.overlay = () => openSheet('Sobrepor (imagem sobre imagem)', (b) => {
   note(b, 'Adiciona um vídeo ou foto por cima do principal, no ponto do cursor. Depois você arrasta e redimensiona direto na prévia.');
@@ -823,10 +885,14 @@ PANELS.text = needSel((c) => {
     ta.value = s.content;
     ta.addEventListener('input', () => { s.content = ta.value; A.markDirty(); A.commit(); });
     ta.addEventListener('change', () => A.renderTimeline());
+    ta.addEventListener('input', () => A.renderTimeline());
     b.appendChild(ta);
+    slider(b, 'Tamanho', 16, 300, 1, () => s.size, v => { s.size = v; if (c.caption && applyAll.checked) { for (const x of allCaptions()) x.text.size = v; A.project.capSize = v; } });
+    const applyAll = h('input', { type: 'checkbox' });
+    applyAll.checked = !!c.caption;
+    if (c.caption) b.appendChild(h('label', { class: 'row', style: 'gap:8px' }, applyAll, 'Tamanho vale para todas as legendas'));
     sub(b, 'Fonte');
     grid(b, FONTS, f => s.font === f.id, f => { s.font = f.id; live(); }, (el, f) => { el.style.fontFamily = f.id; el.appendChild(h('b', { style: `font-family:${f.id};font-size:18px` }, 'Aa')); el.appendChild(h('span', {}, f.name)); });
-    slider(b, 'Tamanho', 16, 300, 1, () => s.size, v => s.size = v);
     colorRow(b, 'Cor', () => s.color, v => s.color = v);
     segmented(b, 'Alinhar', [['left', 'Esq.'], ['center', 'Centro'], ['right', 'Dir.']], () => s.align || 'center', v => s.align = v);
     segmented(b, 'Peso', [[true, 'Negrito'], [false, 'Normal']], () => !!s.bold, v => s.bold = v);
@@ -959,6 +1025,9 @@ async function projectsSheet() {
 
 // ---------- inicialização ----------
 export function initPanels() {
+  buildLib();
+  let wasDesk = isDesktop();
+  window.addEventListener('resize', () => { const d = isDesktop(); if (d !== wasDesk) { wasDesk = d; currentPanel = null; $('sheet').classList.remove('on'); buildLib(); buildTools(); if (d && !A.sel) closeSheet(); } });
   $('sheetClose').addEventListener('click', closeSheet);
   $('btnExport').addEventListener('click', exportModal);
   $('btnProjects').addEventListener('click', projectsSheet);
