@@ -1,0 +1,1415 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Corrige fotos de corrida em lote e deixa prontas para postar.">
+<meta name="theme-color" content="#2a52d1">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<title>Revelador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: workbench — large stage on the left, a tool rail of stacked sections on the right; stacks on phones. */
+:root {
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #e3e7ed;
+  --fg: #15181e;
+  --muted: #5a6270;
+  --line: #d2d7df;
+  --accent: #2a52d1;
+  --accent-soft: #dfe6fb;
+  --accent-fg: #ffffff;
+  --stage: #d6dae2;
+  --hist-r: #d6455a;
+  --hist-g: #2f9d62;
+  --hist-b: #3a6ee8;
+  --hist-l: #8a93a3;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101217; --surface: #171a21; --surface-2: #222631; --fg: #e7e9ef; --muted: #98a0af;
+    --line: #2b303b; --accent: #86a2ff; --accent-soft: #1f2846; --accent-fg: #0c1230; --stage: #0a0c10;
+    --hist-r: #ff6f80; --hist-g: #4fd18c; --hist-b: #6f9bff; --hist-l: #6b7383;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101217; --surface: #171a21; --surface-2: #222631; --fg: #e7e9ef; --muted: #98a0af;
+  --line: #2b303b; --accent: #86a2ff; --accent-soft: #1f2846; --accent-fg: #0c1230; --stage: #0a0c10;
+  --hist-r: #ff6f80; --hist-g: #4fd18c; --hist-b: #6f9bff; --hist-l: #6b7383;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+.app { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 28px; max-width: 1480px; margin: 0 auto; display: grid; gap: 14px; }
+
+header.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; margin: 0; }
+.brand span { color: var(--muted); font-size: 13px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+button, .btn { font: inherit; font-weight: 500; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; line-height: 1.2; }
+button:hover, .btn:hover { border-color: var(--muted); }
+button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary, .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+button.primary:hover { filter: brightness(1.08); }
+select { font: inherit; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 6px 8px; }
+.split { display: inline-flex; }
+.split select { border-radius: 8px 0 0 8px; border-right: 0; }
+.split button { border-radius: 0 8px 8px 0; }
+input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+.work { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+@media (max-width: 900px) { .work { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 10px); background: var(--stage); border-radius: var(--radius); min-height: 320px; display: grid; grid-template-rows: 1fr auto; overflow: hidden; }
+@media (max-width: 900px) { .stage { position: relative; top: 0; } }
+.stage.drag { outline: 2px dashed var(--accent); outline-offset: -8px; }
+.canvas-area { display: grid; place-items: center; padding: 18px; min-height: 300px; }
+.canvas-wrap { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
+#view { display: block; max-width: 100%; max-height: calc(100vh - 190px); height: auto; width: auto; box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 8px 30px rgba(0,0,0,.18); }
+@media (max-width: 900px) { #view { max-height: 62vh; } }
+.badge-before { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; line-height: 1.2; }
+.stage-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 8px 14px; font-size: 12px; color: var(--muted); background: var(--surface); border-top: 1px solid var(--line); font-family: var(--font-mono); }
+.stage-foot b { color: var(--fg); font-weight: 500; }
+
+/* crop overlay */
+.crop-layer { position: absolute; inset: 0; touch-action: none; }
+.crop-box { position: absolute; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); outline: 1px solid rgba(255,255,255,.9); cursor: move; touch-action: none; }
+.crop-box::before, .crop-box::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.crop-box::before { background: linear-gradient(to right, transparent 33.2%, rgba(255,255,255,.45) 33.3%, transparent 33.5%, transparent 66.5%, rgba(255,255,255,.45) 66.6%, transparent 66.8%); }
+.crop-box::after { background: linear-gradient(to bottom, transparent 33.2%, rgba(255,255,255,.45) 33.3%, transparent 33.5%, transparent 66.5%, rgba(255,255,255,.45) 66.6%, transparent 66.8%); }
+.crop-wrap-clip { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.crop-wrap-clip .crop-box { pointer-events: auto; }
+.handle { position: absolute; width: 22px; height: 22px; border: 3px solid #fff; z-index: 2; }
+.handle[data-h="nw"] { left: -4px; top: -4px; border-right: 0; border-bottom: 0; cursor: nwse-resize; }
+.handle[data-h="ne"] { right: -4px; top: -4px; border-left: 0; border-bottom: 0; cursor: nesw-resize; }
+.handle[data-h="sw"] { left: -4px; bottom: -4px; border-right: 0; border-top: 0; cursor: nesw-resize; }
+.handle[data-h="se"] { right: -4px; bottom: -4px; border-left: 0; border-top: 0; cursor: nwse-resize; }
+
+/* tool rail */
+.rail { display: grid; gap: 12px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.panel h2 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.panel h2 small { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 6px 10px; }
+.chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); }
+#autoAll { width: 100%; justify-content: center; padding: 10px 12px; font-size: 14px; }
+
+.filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.filter { padding: 0; border-radius: 8px; overflow: hidden; display: grid; gap: 0; background: var(--surface-2); border: 2px solid transparent; }
+.filter canvas { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--stage); }
+.filter span { font-size: 12px; padding: 4px 2px 5px; text-align: center; display: block; }
+.filter.on { border-color: var(--accent); }
+
+.sliders { display: grid; gap: 9px; }
+.sl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.sl label { font-size: 13px; cursor: pointer; user-select: none; }
+.sl output { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 5.5ch; text-align: right; }
+.sl output.changed { color: var(--accent); }
+.sl input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+.group-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 4px; }
+
+#hist { width: 100%; height: 90px; display: block; background: var(--surface-2); border-radius: 6px; }
+
+.progress { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 6px 14px; border-radius: 7px; color: var(--muted); }
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 13px; }
+.field select, .field input[type="text"] { width: 100%; font: inherit; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 9px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+button.wide { width: 100%; justify-content: center; padding: 11px 12px; font-size: 14px; }
+
+.batch-stage { background: var(--stage); border-radius: var(--radius); padding: 14px; display: grid; gap: 14px; min-height: 420px; align-content: start; min-width: 0; }
+.batch-stage.drag { outline: 2px dashed var(--accent); outline-offset: -8px; }
+.batch-head { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; background: var(--surface); border-radius: 8px; padding: 10px 12px; }
+.batch-title { display: grid; gap: 1px; }
+.batch-empty { cursor: pointer; }
+.batch-empty:hover { border-color: var(--accent); }
+.batch-empty { display: grid; gap: 6px; place-content: center; text-align: center; min-height: 320px; border: 2px dashed var(--line); border-radius: var(--radius); padding: 24px; color: var(--muted); }
+.batch-empty strong { font-family: var(--font-display); font-size: 18px; color: var(--fg); }
+.batch-empty span { max-width: 46ch; margin: 0 auto; }
+.batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.bcard { margin: 0; background: var(--surface); border-radius: 8px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; border: 2px solid transparent; min-width: 0; }
+.bcard.off { opacity: .5; }
+.bcard.on { border-color: var(--accent); }
+.bcard .thumb { position: relative; background: var(--surface-2); aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden; cursor: pointer; touch-action: none; }
+.bcard canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.bcard .thumb .badge-before { top: 6px; left: 6px; }
+.bcard figcaption { padding: 8px 10px 10px; display: grid; gap: 5px; min-width: 0; }
+.bcard .name { display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 500; min-width: 0; }
+.bcard .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bcard .name input { accent-color: var(--accent); flex: none; }
+.bcard .meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.bcard .row { gap: 6px; }
+.mini { font-size: 12px; padding: 4px 8px; }
+.profile { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--surface) 70%); }
+.profile.active #bProfile { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 8px; font-size: 13px; max-width: calc(100% - 32px); z-index: 20; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 30; padding: 16px; }
+.modal-card { background: var(--surface); color: var(--fg); border-radius: var(--radius); padding: 16px; max-width: min(720px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 12px; }
+.proj-card { width: min(520px, 100%); }
+.proj-list { display: grid; gap: 4px; max-height: 50vh; overflow: auto; }
+.proj-list label { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 13px; }
+.proj-list label span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-left: auto; }
+.proj-list input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+.modal-card img { max-height: 60vh; width: auto; margin: 0 auto; display: block; }
+@media (prefers-reduced-motion: reduce) { .progress i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand"><h1>Revelador</h1><span>editor de fotos pessoal</span></div>
+    <button id="installBtn" class="primary" hidden>Instalar app</button>
+    <a class="btn" href="../video/" style="text-decoration:none">Vídeo</a>
+    <div class="seg" role="tablist" aria-label="Modo">
+      <button role="tab" id="modeSingle" aria-selected="true">Uma foto</button>
+      <button role="tab" id="modeBatch" aria-selected="false">Lote</button>
+    </div>
+    <div class="actions" id="singleActions">
+      <label class="btn primary" for="fileIn" tabindex="0" id="openBtn">Abrir foto</label>
+      <input type="file" id="fileIn" accept="image/*">
+      <button id="undoBtn" title="Desfazer (Ctrl+Z)" disabled>↶ Desfazer</button>
+      <button id="redoBtn" title="Refazer (Ctrl+Shift+Z)" disabled>↷ Refazer</button>
+      <button id="compareBtn" title="Segure para ver a foto original">Antes / depois</button>
+      <span class="split">
+        <select id="fmt" aria-label="Formato de exportação">
+          <option value="jpg">JPG</option>
+          <option value="png">PNG</option>
+        </select>
+        <button id="exportBtn" class="primary">Salvar foto</button>
+      </span>
+    </div>
+  </header>
+
+  <div class="work" id="singleMode">
+    <section class="stage" id="stage" aria-label="Área da foto">
+      <div class="canvas-area">
+        <div class="canvas-wrap" id="wrap">
+          <canvas id="view" width="10" height="10"></canvas>
+          <div class="badge-before" id="beforeBadge" hidden>Original</div>
+          <div class="crop-wrap-clip" id="cropLayer" hidden>
+            <div class="crop-box" id="cropBox">
+              <i class="handle" data-h="nw"></i><i class="handle" data-h="ne"></i>
+              <i class="handle" data-h="sw"></i><i class="handle" data-h="se"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <span id="fileInfo">Foto de exemplo</span>
+        <span id="sizeInfo"></span>
+        <span>Arraste, cole (Ctrl+V) ou abra uma foto</span>
+      </div>
+    </section>
+
+    <aside class="rail">
+      <section class="panel">
+        <h2>Automático <small>analisa o histograma da foto</small></h2>
+        <button id="autoAll" class="primary">✦ Ajuste automático</button>
+        <div class="row">
+          <button class="chip" data-auto="levels">Níveis</button>
+          <button class="chip" data-auto="wb">Balanço de branco</button>
+          <button class="chip" data-auto="exposure">Exposição</button>
+          <button class="chip" id="autoReset">Limpar</button>
+        </div>
+        <p class="hint" id="autoHint">O ajuste automático estica os tons escuros e claros, neutraliza a cor dominante e corrige a exposição. Depois, refine nos controles abaixo.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Filtros</h2>
+        <div class="filters" id="filters"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Ajustes <small>duplo clique no nome zera</small></h2>
+        <div class="sliders" id="sliders"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Cortar e girar</h2>
+        <div class="row">
+          <button id="cropBtn">Cortar</button>
+          <button id="rotL" title="Girar à esquerda">⟲ 90°</button>
+          <button id="rotR" title="Girar à direita">⟳ 90°</button>
+          <button id="flipBtn">Espelhar</button>
+        </div>
+        <div class="row" id="aspects"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Histograma <small id="histNote">resultado</small></h2>
+        <canvas id="hist" width="600" height="180"></canvas>
+      </section>
+
+      <section class="panel">
+        <h2>Lote <small>várias fotos de uma vez</small></h2>
+        <p class="hint">Corrija dezenas de fotos de uma vez, cada uma com o próprio ajuste automático. Os ajustes que você fizer aqui podem ser somados ao lote.</p>
+        <button id="goBatch">Ir para o modo Lote</button>
+      </section>
+    </aside>
+  </div>
+
+  <div class="work" id="batchMode" hidden>
+    <section class="batch-stage" id="batchStage" aria-label="Fotos do lote">
+      <div class="batch-head">
+        <div class="batch-title">
+          <strong id="batchCount">Nenhuma foto no lote</strong>
+          <span class="hint">Segure uma foto para ver a original.</span>
+        </div>
+        <div class="row">
+          <label class="btn primary" for="batchIn" tabindex="0" id="batchAdd">Adicionar fotos</label>
+          <input type="file" id="batchIn" accept="image/*" multiple>
+          <button id="projBtn" hidden>Fotos do projeto</button>
+          <button id="batchAll">Marcar todas</button>
+          <button id="batchClear">Limpar lote</button>
+        </div>
+      </div>
+      <p class="hint" id="batchLoad" role="status" hidden></p>
+      <div class="batch-empty" id="batchEmpty" role="button" tabindex="0">
+        <strong>Arraste várias fotos para cá</strong>
+        <span id="projHint" hidden>No app do Claude no celular: envie as fotos numa mensagem do projeto e depois toque em <b>Fotos do projeto</b>.</span>
+        <span>ou toque aqui para escolher. Cada foto é analisada sozinha: níveis, cor e exposição são corrigidos conforme o que ela precisa.</span>
+      </div>
+      <div class="batch-grid" id="batchGrid"></div>
+    </section>
+
+    <aside class="rail">
+      <section class="panel profile">
+        <h2>Perfil Corrida <small>um clique e pronto</small></h2>
+        <p class="hint">Correção automática completa, filtro Esporte (mais contraste, definição e nitidez), recorte 4:5 seguindo o corredor e 1080 × 1350 px, o tamanho do feed do Instagram.</p>
+        <button id="bProfile" class="wide">Usar perfil Corrida</button>
+      </section>
+      <section class="panel">
+        <h2>Correção automática</h2>
+        <div class="sl">
+          <label for="bIntensity">Intensidade</label><output id="oIntensity"></output>
+          <input type="range" id="bIntensity" min="0" max="100" step="5">
+        </div>
+        <div class="row" id="bParts">
+          <button class="chip" data-part="levels" aria-pressed="true">Níveis</button>
+          <button class="chip" data-part="wb" aria-pressed="true">Balanço de branco</button>
+          <button class="chip" data-part="exposure" aria-pressed="true">Exposição</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Estilo</h2>
+        <div class="field">
+          <label for="bFilter">Filtro</label>
+          <select id="bFilter"></select>
+        </div>
+        <div class="field">
+          <label for="bCrop">Recorte para post</label>
+          <select id="bCrop">
+            <option value="none">Sem recorte</option>
+            <option value="4:5">4:5 · feed do Instagram</option>
+            <option value="1:1">1:1 · quadrado</option>
+            <option value="9:16">9:16 · stories e reels</option>
+            <option value="16:9">16:9 · paisagem</option>
+            <option value="3:2">3:2 · foto clássica</option>
+          </select>
+        </div>
+        <label class="check"><input type="checkbox" id="bManual"> Somar os ajustes manuais do modo Uma foto</label>
+        <p class="hint" id="bManualHint" hidden></p>
+      </section>
+
+      <section class="panel">
+        <h2>Arquivos de saída</h2>
+        <div class="field">
+          <label for="bSize">Tamanho</label>
+          <select id="bSize">
+            <option value="w1080">Largura 1080 px (Instagram)</option>
+            <option value="2048">Lado maior 2048 px</option>
+            <option value="3840">Lado maior 3840 px (4K)</option>
+            <option value="0">Original</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bFormat">Formato</label>
+          <select id="bFormat">
+            <option value="jpg">JPG</option>
+            <option value="webp">WebP (arquivo menor)</option>
+            <option value="png">PNG (sem perdas)</option>
+          </select>
+        </div>
+        <div class="sl" id="bQualityRow">
+          <label for="bQuality">Qualidade</label><output id="oQuality"></output>
+          <input type="range" id="bQuality" min="60" max="100" step="1">
+        </div>
+        <div class="field">
+          <label for="bPack">Salvar como</label>
+          <select id="bPack">
+            <option value="each">Fotos separadas (melhor no celular)</option>
+            <option value="zip">Um .zip com todas (melhor no computador)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bNaming">Nomes</label>
+          <select id="bNaming">
+            <option value="suffix">Nome original + sufixo</option>
+            <option value="seq">Sequência numerada</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bText" id="bTextLabel">Sufixo</label>
+          <input type="text" id="bText" maxlength="60" autocomplete="off">
+        </div>
+        <p class="hint" id="bNameEx"></p>
+      </section>
+
+      <section class="panel">
+        <button id="batchRun" class="primary wide" disabled>Corrigir e salvar</button>
+        <div class="progress" id="batchProg" hidden><i></i></div>
+        <p class="hint" id="batchMsg" hidden></p>
+      </section>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="modal" id="projModal" hidden>
+  <div class="modal-card proj-card">
+    <strong>Fotos enviadas ao projeto</strong>
+    <p class="hint" id="projMsg">Procurando fotos…</p>
+    <div class="proj-list" id="projList"></div>
+    <div class="row">
+      <button id="projAdd" class="primary" disabled>Adicionar fotos</button>
+      <button id="projToggle" hidden>Marcar todas</button>
+      <button id="projClose">Fechar</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <strong id="resTitle">Sua foto está pronta</strong>
+    <p class="hint" id="resHint"></p>
+    <img id="modalImg" alt="Prévia da foto pronta">
+    <div class="row">
+      <button id="resShare" class="primary">Compartilhar no Instagram…</button>
+      <button id="resSave">Salvar no celular</button>
+      <button id="modalClose">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/jszip.min.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const PREVIEW_MAX = 1400;
+const MAX_EXPORT_PX = 36e6;
+
+const SLIDERS = [
+  ["Luz"],
+  ["brightness", "Exposição", -100, 100],
+  ["contrast", "Contraste", -100, 100],
+  ["highlights", "Realces", -100, 100],
+  ["shadows", "Sombras", -100, 100],
+  ["Cor"],
+  ["saturation", "Saturação", -100, 100],
+  ["warmth", "Temperatura", -100, 100],
+  ["tint", "Matiz", -100, 100],
+  ["Efeitos"],
+  ["clarity", "Definição", 0, 100],
+  ["sharpen", "Nitidez", 0, 100],
+  ["vignette", "Vinheta", 0, 100],
+  ["fade", "Esmaecer", 0, 100],
+];
+const FILTERS = {
+  original: { name: "Original" },
+  esporte: { name: "Esporte", contrast: 16, saturation: 16, clarity: 40, sharpen: 22, shadows: 18, highlights: -16, vignette: 14 },
+  vivido: { name: "Vívido", saturation: 30, contrast: 12 },
+  quente: { name: "Quente", warmth: 28, saturation: 8, fade: 4 },
+  frio: { name: "Frio", warmth: -26, tint: -4, contrast: 6 },
+  pb: { name: "P&B", mode: "gray", contrast: 18 },
+  sepia: { name: "Sépia", mode: "sepia", contrast: 6, fade: 10 },
+  retro: { name: "Retrô", fade: 22, saturation: -22, warmth: 14, contrast: -10, vignette: 28 },
+  dramatico: { name: "Dramático", contrast: 38, saturation: -12, vignette: 42, highlights: -24, shadows: -12 },
+  suave: { name: "Suave", contrast: -16, fade: 12, brightness: 10, saturation: -6 },
+};
+const ASPECTS = [["free", "Livre", 0], ["orig", "Original", -1], ["1:1", "1:1", 1], ["4:5", "4:5", 4/5], ["3:2", "3:2", 3/2], ["16:9", "16:9", 16/9], ["9:16", "9:16", 9/16]];
+
+const NEUTRAL_AUTO = () => ({ lo: [0, 0, 0], hi: [255, 255, 255], wb: [1, 1, 1], tags: [] });
+const defaultState = () => ({
+  adj: Object.fromEntries(SLIDERS.filter(s => s.length > 1).map(s => [s[0], 0])),
+  filter: "original", auto: NEUTRAL_AUTO(), rot: 0, flip: false,
+  crop: { x: 0, y: 0, w: 1, h: 1 }, aspect: "free",
+});
+
+let source = null, srcW = 0, srcH = 0, fileName = "foto";
+let basePrev = null, srcC = null, srcData = null, outData = null;
+let state = defaultState();
+let history = [], hIndex = -1;
+let cropMode = false, comparing = false, renderQueued = false, thumbTimer = 0;
+let lastResult = null;
+const proc = document.createElement("canvas"); const procCtx = proc.getContext("2d", { willReadFrequently: true });
+const view = $("#view"), viewCtx = view.getContext("2d");
+
+
+
+/* ---------- image processing ---------- */
+function effective(adj, filter) {
+  const f = FILTERS[filter] || {}; const e = {};
+  for (const k in adj) e[k] = clamp((adj[k] || 0) + (f[k] || 0), k === "sharpen" || k === "vignette" || k === "fade" || k === "clarity" ? 0 : -100, 100);
+  e.mode = f.mode || "none";
+  return e;
+}
+
+function processPixels(d, W, H, e, auto, crop, sharpenScale = 1) {
+  const L = [new Uint8ClampedArray(256), new Uint8ClampedArray(256), new Uint8ClampedArray(256)];
+  const g = Math.pow(2, e.brightness / 100);
+  const cf = Math.tan((e.contrast / 100 * 0.6 + 1) * Math.PI / 4);
+  const sh = e.shadows / 100, hl = e.highlights / 100, fade = e.fade / 100;
+  const warm = e.warmth / 100, tint = e.tint / 100;
+  for (let c = 0; c < 3; c++) {
+    const lo = auto.lo[c], span = Math.max(1, auto.hi[c] - lo), wb = auto.wb[c];
+    for (let v = 0; v < 256; v++) {
+      let x = clamp((v - lo) / span * wb, 0, 1);
+      x = Math.pow(x, 1 / g);
+      x += sh * 1.2 * x * (1 - x) * (1 - x);
+      x += hl * 1.2 * x * x * (1 - x);
+      x = (x - 0.5) * cf + 0.5;
+      if (c === 0) x += warm * 0.12; else if (c === 2) x -= warm * 0.12; else x -= tint * 0.1;
+      x = clamp(x, 0, 1);
+      x = fade * 0.2 + x * (1 - fade * 0.3);
+      L[c][v] = x * 255 + 0.5;
+    }
+  }
+  const sat = 1 + e.saturation / 100, mode = e.mode;
+  const vig = e.vignette / 100;
+  const cx = (crop.x + crop.w / 2) * W, cy = (crop.y + crop.h / 2) * H;
+  const rad2 = Math.pow(0.5 * Math.hypot(crop.w * W, crop.h * H), 2);
+  const LR = L[0], LG = L[1], LB = L[2];
+  for (let y = 0, i = 0; y < H; y++) {
+    const dy2 = (y - cy) * (y - cy);
+    for (let x = 0; x < W; x++, i += 4) {
+      let r = LR[d[i]], gg = LG[d[i + 1]], b = LB[d[i + 2]];
+      if (sat !== 1 || mode !== "none") {
+        const l = 0.299 * r + 0.587 * gg + 0.114 * b;
+        if (mode === "gray") { r = gg = b = l; }
+        else if (mode === "sepia") {
+          const tr = 0.393 * r + 0.769 * gg + 0.189 * b, tg = 0.349 * r + 0.686 * gg + 0.168 * b, tb = 0.272 * r + 0.534 * gg + 0.131 * b;
+          r = tr; gg = tg; b = tb;
+        } else { r = l + (r - l) * sat; gg = l + (gg - l) * sat; b = l + (b - l) * sat; }
+      }
+      if (vig > 0) {
+        const t = Math.min(1.2, ((x - cx) * (x - cx) + dy2) / rad2);
+        const f = 1 - vig * 0.75 * t * t;
+        r *= f; gg *= f; b *= f;
+      }
+      d[i] = r; d[i + 1] = gg; d[i + 2] = b;
+    }
+  }
+  if (e.clarity > 0) clarityPass(d, W, H, e.clarity / 100);
+  if (e.sharpen > 0) sharpen(d, W, H, e.sharpen / 100 * 1.4 * sharpenScale);
+}
+
+// Local contrast: boost the difference between each pixel's luminance and a wide blur of it, mostly in midtones.
+function clarityPass(d, W, H, amt) {
+  const r = Math.max(2, Math.round(Math.min(W, H) * 0.015)), n = W * H, win = 2 * r + 1;
+  const L = new Float32Array(n), T = new Float32Array(n), B = new Float32Array(n);
+  for (let i = 0, j = 0; i < n; i++, j += 4) L[i] = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+  for (let y = 0; y < H; y++) {
+    const o = y * W; let s = 0;
+    for (let x = -r; x <= r; x++) s += L[o + clamp(x, 0, W - 1)];
+    for (let x = 0; x < W; x++) { T[o + x] = s / win; s += L[o + Math.min(W - 1, x + r + 1)] - L[o + Math.max(0, x - r)]; }
+  }
+  for (let x = 0; x < W; x++) {
+    let s = 0;
+    for (let y = -r; y <= r; y++) s += T[clamp(y, 0, H - 1) * W + x];
+    for (let y = 0; y < H; y++) { B[y * W + x] = s / win; s += T[Math.min(H - 1, y + r + 1) * W + x] - T[Math.max(0, y - r) * W + x]; }
+  }
+  for (let i = 0, j = 0; i < n; i++, j += 4) {
+    const l = L[i], m = l / 127.5 - 1, k = amt * 1.1 * (l - B[i]) * (1 - m * m);
+    d[j] += k; d[j + 1] += k; d[j + 2] += k;
+  }
+}
+
+// Picks where to place a crop of the given pixel ratio: follows edge detail, color and skin tones, with a pull toward the center.
+function smartCrop(img, ratio) {
+  const W = img.width, H = img.height, d = img.data;
+  let cw, ch;
+  if (W / H > ratio) { ch = H; cw = H * ratio; } else { cw = W; ch = W / ratio; }
+  const alongX = cw < W - 1, len = alongX ? W : H, win = Math.round(alongX ? cw : ch);
+  if (win >= len) return { x: 0, y: 0, w: 1, h: 1 };
+  const prof = new Float64Array(len);
+  for (let y = 0; y < H - 1; y += 2) {
+    for (let x = 0; x < W - 1; x += 2) {
+      const i = (y * W + x) * 4, r = d[i], g = d[i + 1], b = d[i + 2];
+      const l = 0.299 * r + 0.587 * g + 0.114 * b;
+      const j = i + 4, k = i + W * 4;
+      const lx = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2], ly = 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2];
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const skin = r > 95 && g > 40 && b > 20 && r > g && r > b && r - g > 15 && mx - mn > 15 ? 60 : 0;
+      prof[alongX ? x : y] += Math.abs(l - lx) + Math.abs(l - ly) + Math.max(0, mx - mn - 40) * 0.4 + skin;
+    }
+  }
+  // Center the crop on the energy above the background level (the median column/row).
+  const base = Float64Array.from(prof).sort()[len >> 1] * 1.2;
+  let sum = 0, mom = 0;
+  for (let i = 0; i < len; i++) { const e = Math.max(0, prof[i] - base); sum += e; mom += e * i; }
+  const center = sum > 0 ? mom / sum : len / 2;
+  const at = Math.round(clamp(center - win / 2, 0, len - win));
+  return alongX ? { x: at / W, y: 0, w: win / W, h: 1 } : { x: 0, y: at / H, w: 1, h: win / H };
+}
+
+function sharpen(d, W, H, amt) {
+  const s = new Uint8ClampedArray(d);
+  const row = W * 4;
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1, i = y * row + 4; x < W - 1; x++, i += 4) {
+      for (let c = 0; c < 3; c++) {
+        const k = i + c, v = s[k];
+        d[k] = v + amt * (4 * v - s[k - 4] - s[k + 4] - s[k - row] - s[k + row]);
+      }
+    }
+  }
+}
+
+function computeAuto(d, which = ["levels", "wb", "exposure"], current = NEUTRAL_AUTO()) {
+  const auto = { lo: current.lo.slice(), hi: current.hi.slice(), wb: current.wb.slice(), tags: current.tags.slice() };
+  const n = d.length / 4, step = Math.max(1, Math.floor(n / 250000)) * 4;
+  let out = {};
+  if (which.includes("levels")) {
+    const hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)]; let cnt = 0;
+    for (let i = 0; i < d.length; i += step) { hist[0][d[i]]++; hist[1][d[i + 1]]++; hist[2][d[i + 2]]++; cnt++; }
+    for (let c = 0; c < 3; c++) {
+      let acc = 0, lo = 0, hi = 255;
+      for (let v = 0; v < 256; v++) { acc += hist[c][v]; if (acc >= cnt * 0.004) { lo = v; break; } }
+      acc = 0;
+      for (let v = 255; v >= 0; v--) { acc += hist[c][v]; if (acc >= cnt * 0.004) { hi = v; break; } }
+      if (hi - lo < 48) { const mid = (hi + lo) / 2; lo = Math.max(0, mid - 24); hi = Math.min(255, mid + 24); }
+      auto.lo[c] = lo; auto.hi[c] = hi;
+    }
+  }
+  const norm = (v, c) => clamp((v - auto.lo[c]) / Math.max(1, auto.hi[c] - auto.lo[c]), 0, 1);
+  if (which.includes("wb")) {
+    let sr = 0, sg = 0, sb = 0, k = 0;
+    for (let i = 0; i < d.length; i += step) {
+      const r = norm(d[i], 0), g = norm(d[i + 1], 1), b = norm(d[i + 2], 2);
+      const l = (r + g + b) / 3;
+      if (l > 0.12 && l < 0.88) { sr += r; sg += g; sb += b; k++; }
+    }
+    if (k > 50) {
+      const ar = sr / k, ag = sg / k, ab = sb / k, gray = (ar + ag + ab) / 3;
+      auto.wb = [clamp(gray / ar, 0.85, 1.18), clamp(gray / ag, 0.85, 1.18), clamp(gray / ab, 0.85, 1.18)];
+    }
+  }
+  if (which.includes("exposure")) {
+    let s = 0, k = 0;
+    for (let i = 0; i < d.length; i += step) {
+      const r = clamp(norm(d[i], 0) * auto.wb[0], 0, 1), g = clamp(norm(d[i + 1], 1) * auto.wb[1], 0, 1), b = clamp(norm(d[i + 2], 2) * auto.wb[2], 0, 1);
+      s += 0.299 * r + 0.587 * g + 0.114 * b; k++;
+    }
+    const m = clamp(s / k, 0.03, 0.97);
+    const gNeeded = Math.log(m) / Math.log(0.46);
+    out.brightness = Math.round(clamp(100 * Math.log2(gNeeded), -60, 60));
+  }
+  for (const w of which) if (!auto.tags.includes(w)) auto.tags.push(w);
+  return { auto, ...out };
+}
+
+/* ---------- geometry ---------- */
+function orient(src, sw, sh, rot, flip, scale = 1) {
+  const c = document.createElement("canvas");
+  const w = Math.round(sw * scale), h = Math.round(sh * scale);
+  const swap = rot % 180 !== 0;
+  c.width = swap ? h : w; c.height = swap ? w : h;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  x.imageSmoothingQuality = "high";
+  x.translate(c.width / 2, c.height / 2);
+  if (flip) x.scale(-1, 1);
+  x.rotate(rot * Math.PI / 180);
+  x.drawImage(src, -w / 2, -h / 2, w, h);
+  return c;
+}
+
+function setSource(src, w, h, name, info) {
+  source = src; srcW = w; srcH = h; fileName = name;
+  const s = Math.min(1, PREVIEW_MAX / Math.max(w, h));
+  basePrev = orient(src, w, h, 0, false, s);
+  state = defaultState(); history = []; hIndex = -1;
+  cropMode = false; syncCropUI();
+  $("#fileInfo").textContent = info || name;
+  rebuildSrc();
+  commit();
+}
+
+function rebuildSrc() {
+  srcC = orient(basePrev, basePrev.width, basePrev.height, state.rot, state.flip);
+  srcData = srcC.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, srcC.width, srcC.height);
+  proc.width = srcC.width; proc.height = srcC.height;
+  outData = procCtx.createImageData(proc.width, proc.height);
+  const ow = state.rot % 180 ? srcH : srcW, oh = state.rot % 180 ? srcW : srcH;
+  const cw = Math.round(state.crop.w * ow), ch = Math.round(state.crop.h * oh);
+  $("#sizeInfo").innerHTML = `<b>${cw.toLocaleString("pt-BR")} × ${ch.toLocaleString("pt-BR")} px</b> · ${(cw * ch / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MP`;
+  queueRender(); queueThumbs();
+}
+
+/* ---------- rendering ---------- */
+function queueRender() { if (!renderQueued) { renderQueued = true; requestAnimationFrame(render); } }
+function render() {
+  renderQueued = false;
+  if (!srcData) return;
+  outData.data.set(srcData.data);
+  processPixels(outData.data, proc.width, proc.height, effective(state.adj, state.filter), state.auto, state.crop);
+  procCtx.putImageData(outData, 0, 0);
+  drawView();
+  drawHist();
+}
+function drawView() {
+  const from = comparing ? srcC : proc;
+  const W = proc.width, H = proc.height;
+  let sx = 0, sy = 0, sw = W, sh = H;
+  if (!cropMode) { sx = Math.round(state.crop.x * W); sy = Math.round(state.crop.y * H); sw = Math.max(1, Math.round(state.crop.w * W)); sh = Math.max(1, Math.round(state.crop.h * H)); }
+  if (view.width !== sw || view.height !== sh) { view.width = sw; view.height = sh; }
+  viewCtx.drawImage(from, sx, sy, sw, sh, 0, 0, sw, sh);
+  $("#beforeBadge").hidden = !comparing;
+  if (cropMode) positionCropBox();
+}
+function drawHist() {
+  const c = $("#hist"), x = c.getContext("2d");
+  const d = viewCtx.getImageData(0, 0, view.width, view.height).data;
+  const h = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
+  const step = Math.max(1, Math.floor(d.length / 4 / 120000)) * 4;
+  for (let i = 0; i < d.length; i += step) { h[0][d[i]]++; h[1][d[i + 1]]++; h[2][d[i + 2]]++; h[3][(d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8]++; }
+  let max = 1; for (let k = 0; k < 4; k++) for (let v = 2; v < 254; v++) max = Math.max(max, h[k][v]);
+  const cs = getComputedStyle(document.documentElement);
+  const cols = ["--hist-r", "--hist-g", "--hist-b"].map(t => cs.getPropertyValue(t).trim());
+  x.clearRect(0, 0, c.width, c.height);
+  const W = c.width, H = c.height;
+  x.fillStyle = cs.getPropertyValue("--hist-l").trim(); x.globalAlpha = 0.45;
+  x.beginPath(); x.moveTo(0, H);
+  for (let v = 0; v < 256; v++) x.lineTo(v / 255 * W, H - Math.min(1, h[3][v] / max) * (H - 4));
+  x.lineTo(W, H); x.fill();
+  x.globalAlpha = 0.9; x.lineWidth = 2;
+  for (let k = 0; k < 3; k++) {
+    x.strokeStyle = cols[k]; x.beginPath();
+    for (let v = 0; v < 256; v++) { const px = v / 255 * W, py = H - Math.min(1, h[k][v] / max) * (H - 4); v ? x.lineTo(px, py) : x.moveTo(px, py); }
+    x.stroke();
+  }
+  x.globalAlpha = 1;
+  $("#histNote").textContent = comparing ? "original" : "resultado";
+}
+
+function queueThumbs() { clearTimeout(thumbTimer); thumbTimer = setTimeout(renderThumbs, 220); }
+function renderThumbs() {
+  if (!srcC) return;
+  const W = srcC.width, H = srcC.height;
+  const cx = state.crop.x * W, cy = state.crop.y * H, cw = state.crop.w * W, ch = state.crop.h * H;
+  const side = Math.min(cw, ch), T = 120;
+  const t = document.createElement("canvas"); t.width = t.height = T;
+  const tx = t.getContext("2d", { willReadFrequently: true });
+  tx.drawImage(srcC, cx + (cw - side) / 2, cy + (ch - side) / 2, side, side, 0, 0, T, T);
+  const base = tx.getImageData(0, 0, T, T);
+  document.querySelectorAll(".filter").forEach(btn => {
+    const c = btn.querySelector("canvas"); c.width = c.height = T;
+    const img = new ImageData(new Uint8ClampedArray(base.data), T, T);
+    const adj = { ...state.adj, sharpen: 0 };
+    processPixels(img.data, T, T, effective(adj, btn.dataset.f), state.auto, { x: 0, y: 0, w: 1, h: 1 });
+    c.getContext("2d").putImageData(img, 0, 0);
+  });
+}
+
+/* ---------- history ---------- */
+function snapshot() { return JSON.stringify(state); }
+function commit() {
+  const s = snapshot();
+  if (history[hIndex] === s) return;
+  history = history.slice(0, hIndex + 1); history.push(s); hIndex = history.length - 1;
+  if (history.length > 80) { history.shift(); hIndex--; }
+  syncUI();
+}
+function restore(i) {
+  const prev = state; hIndex = i; state = JSON.parse(history[i]);
+  const geomChanged = prev.rot !== state.rot || prev.flip !== state.flip;
+  if (geomChanged) rebuildSrc(); else { queueRender(); queueThumbs(); updateSizeInfo(); }
+  syncUI();
+}
+function updateSizeInfo() {
+  const ow = state.rot % 180 ? srcH : srcW, oh = state.rot % 180 ? srcW : srcH;
+  const cw = Math.round(state.crop.w * ow), ch = Math.round(state.crop.h * oh);
+  $("#sizeInfo").innerHTML = `<b>${cw.toLocaleString("pt-BR")} × ${ch.toLocaleString("pt-BR")} px</b> · ${(cw * ch / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MP`;
+}
+
+/* ---------- UI build ---------- */
+const sliderBox = $("#sliders");
+for (const s of SLIDERS) {
+  if (s.length === 1) { const g = document.createElement("div"); g.className = "group-label"; g.textContent = s[0]; sliderBox.append(g); continue; }
+  const [key, label, min, max] = s;
+  const el = document.createElement("div"); el.className = "sl";
+  el.innerHTML = `<label for="s-${key}">${label}</label><output id="o-${key}"></output><input type="range" id="s-${key}" min="${min}" max="${max}" step="1" value="0">`;
+  sliderBox.append(el);
+  const input = el.querySelector("input");
+  input.addEventListener("input", () => { state.adj[key] = +input.value; showVal(key); queueRender(); queueThumbs(); });
+  input.addEventListener("change", commit);
+  el.querySelector("label").addEventListener("dblclick", () => { state.adj[key] = 0; input.value = 0; showVal(key); queueRender(); queueThumbs(); commit(); });
+}
+function showVal(key) {
+  const v = state.adj[key], o = $("#o-" + key);
+  if (key === "brightness") o.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " EV";
+  else if (key === "warmth") o.textContent = v === 0 ? "0" : (v > 0 ? "+" : "−") + Math.abs(v) + (v > 0 ? " quente" : " frio");
+  else o.textContent = (v > 0 && SLIDERS.find(s => s[0] === key)[2] < 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v);
+  o.classList.toggle("changed", v !== 0);
+}
+
+const filterBox = $("#filters");
+for (const [k, f] of Object.entries(FILTERS)) {
+  const b = document.createElement("button"); b.className = "filter"; b.dataset.f = k;
+  b.innerHTML = `<canvas width="120" height="120"></canvas><span>${f.name}</span>`;
+  b.addEventListener("click", () => { state.filter = k; queueRender(); commit(); });
+  filterBox.append(b);
+}
+
+const aspectBox = $("#aspects");
+for (const [k, label] of ASPECTS) {
+  const b = document.createElement("button"); b.className = "chip"; b.dataset.a = k; b.textContent = label;
+  b.addEventListener("click", () => { setAspect(k); if (!cropMode) toggleCrop(true); commit(); });
+  aspectBox.append(b);
+}
+
+function syncUI() {
+  for (const k in state.adj) { const i = $("#s-" + k); if (i) { i.value = state.adj[k]; showVal(k); } }
+  document.querySelectorAll(".filter").forEach(b => b.classList.toggle("on", b.dataset.f === state.filter));
+  document.querySelectorAll("[data-a]").forEach(b => b.classList.toggle("on", b.dataset.a === state.aspect));
+  document.querySelectorAll("[data-auto]").forEach(b => b.classList.toggle("on", state.auto.tags.includes(b.dataset.auto)));
+  $("#undoBtn").disabled = hIndex <= 0;
+  $("#redoBtn").disabled = hIndex >= history.length - 1;
+}
+
+/* ---------- auto ---------- */
+$("#autoAll").addEventListener("click", () => {
+  const r = computeAuto(srcData.data);
+  state.auto = r.auto;
+  state.adj.brightness = r.brightness;
+  state.adj.contrast = Math.max(state.adj.contrast, 10);
+  state.adj.saturation = Math.max(state.adj.saturation, 14);
+  queueRender(); queueThumbs(); commit();
+  const shift = r.auto.wb.map(v => Math.abs(1 - v)).reduce((a, b) => Math.max(a, b));
+  toast(`Ajustado: tons esticados, ${shift > 0.04 ? "cor dominante neutralizada" : "cor já estava neutra"}, exposição ${r.brightness >= 0 ? "+" : "−"}${Math.abs(r.brightness / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} EV.`);
+});
+document.querySelectorAll("[data-auto]").forEach(b => b.addEventListener("click", () => {
+  const w = b.dataset.auto;
+  const r = computeAuto(srcData.data, [w], state.auto);
+  state.auto = r.auto;
+  if (w === "exposure") state.adj.brightness = r.brightness;
+  queueRender(); queueThumbs(); commit();
+}));
+$("#autoReset").addEventListener("click", () => { state.auto = NEUTRAL_AUTO(); queueRender(); queueThumbs(); commit(); });
+
+/* ---------- crop & rotate ---------- */
+function aspectRatio(k) { const a = ASPECTS.find(a => a[0] === k); if (!a) return 0; return a[2] === -1 ? (state.rot % 180 ? srcH / srcW : srcW / srcH) : a[2]; }
+function normRatio(r) { return r * proc.height / proc.width; }
+function setAspect(k) {
+  state.aspect = k;
+  const r = aspectRatio(k);
+  if (r) {
+    const rr = normRatio(r);
+    let w, h; if (rr >= 1) { w = 1; h = 1 / rr; } else { h = 1; w = rr; }
+    state.crop = { x: (1 - w) / 2, y: (1 - h) / 2, w, h };
+  }
+  updateSizeInfo(); queueRender(); queueThumbs(); syncUI();
+}
+function toggleCrop(on = !cropMode) { cropMode = on; syncCropUI(); drawView(); if (!on) { queueRender(); queueThumbs(); } }
+function syncCropUI() { $("#cropLayer").hidden = !cropMode; const b = $("#cropBtn"); b.textContent = cropMode ? "Concluir corte" : "Cortar"; b.classList.toggle("primary", cropMode); }
+function positionCropBox() {
+  const b = $("#cropBox"), c = state.crop;
+  b.style.left = c.x * 100 + "%"; b.style.top = c.y * 100 + "%"; b.style.width = c.w * 100 + "%"; b.style.height = c.h * 100 + "%";
+}
+$("#cropBtn").addEventListener("click", () => { toggleCrop(); commit(); });
+function rotate(delta) {
+  state.rot = (state.rot + delta + 360) % 360;
+  state.crop = { x: 0, y: 0, w: 1, h: 1 };
+  rebuildSrc();
+  if (state.aspect !== "free") setAspect(state.aspect);
+  commit();
+}
+$("#rotL").addEventListener("click", () => rotate(-90));
+$("#rotR").addEventListener("click", () => rotate(90));
+$("#flipBtn").addEventListener("click", () => { state.flip = !state.flip; state.crop.x = 1 - state.crop.x - state.crop.w; rebuildSrc(); commit(); });
+
+let drag = null;
+$("#cropBox").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  const h = e.target.dataset.h || "move";
+  drag = { h, sx: e.clientX, sy: e.clientY, c: { ...state.crop } };
+  e.currentTarget.setPointerCapture(e.pointerId);
+});
+$("#cropBox").addEventListener("pointermove", e => {
+  if (!drag) return;
+  const rect = $("#wrap").getBoundingClientRect();
+  const c0 = drag.c;
+  if (drag.h === "move") {
+    const dx = (e.clientX - drag.sx) / rect.width, dy = (e.clientY - drag.sy) / rect.height;
+    state.crop = { ...c0, x: clamp(c0.x + dx, 0, 1 - c0.w), y: clamp(c0.y + dy, 0, 1 - c0.h) };
+  } else {
+    const px = clamp((e.clientX - rect.left) / rect.width, 0, 1), py = clamp((e.clientY - rect.top) / rect.height, 0, 1);
+    const ax = drag.h.includes("w") ? c0.x + c0.w : c0.x, ay = drag.h.includes("n") ? c0.y + c0.h : c0.y;
+    let w = Math.abs(px - ax), h = Math.abs(py - ay);
+    const r = aspectRatio(state.aspect);
+    if (r) { const rr = normRatio(r); if (w / h > rr) w = h * rr; else h = w / rr; }
+    w = Math.max(0.04, w); h = Math.max(0.04, h);
+    const x = drag.h.includes("w") ? ax - w : ax, y = drag.h.includes("n") ? ay - h : ay;
+    if (x >= -0.0001 && y >= -0.0001 && x + w <= 1.0001 && y + h <= 1.0001) state.crop = { x: Math.max(0, x), y: Math.max(0, y), w, h };
+  }
+  positionCropBox(); updateSizeInfo();
+});
+const endDrag = () => { if (drag) { drag = null; commit(); } };
+$("#cropBox").addEventListener("pointerup", endDrag);
+$("#cropBox").addEventListener("pointercancel", endDrag);
+
+/* ---------- compare, undo ---------- */
+const cmp = $("#compareBtn");
+const setCompare = on => { if (comparing === on) return; comparing = on; drawView(); drawHist(); cmp.classList.toggle("primary", on); };
+cmp.addEventListener("pointerdown", e => { e.preventDefault(); setCompare(true); });
+["pointerup", "pointerleave", "pointercancel"].forEach(t => cmp.addEventListener(t, () => setCompare(false)));
+cmp.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCompare(true); } });
+cmp.addEventListener("keyup", () => setCompare(false));
+$("#undoBtn").addEventListener("click", () => hIndex > 0 && restore(hIndex - 1));
+$("#redoBtn").addEventListener("click", () => hIndex < history.length - 1 && restore(hIndex + 1));
+document.addEventListener("keydown", e => {
+  if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.target.tagName === "INPUT" && e.target.type !== "range") return;
+  e.preventDefault();
+  if (e.shiftKey) { if (hIndex < history.length - 1) restore(hIndex + 1); } else if (hIndex > 0) restore(hIndex - 1);
+});
+
+/* ---------- loading ---------- */
+// Phone pickers sometimes hand over photos with an empty type, so accept by extension too.
+const IMG_EXT = /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif|tiff?)$/i;
+const isImageFile = f => !!f && (f.type.startsWith("image/") || !f.type || f.type === "application/octet-stream" || IMG_EXT.test(f.name || ""));
+const isHeic = f => /heic|heif/i.test(f.type) || /\.hei[cf]$/i.test(f.name || "");
+
+function imgFromUrl(url) {
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("decode")); im.src = url; });
+}
+function readAsDataUrl(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(file); });
+}
+// Decodes a photo three ways, so a viewer that blocks one route still works. Resolves { src, w, h, release }.
+async function loadImage(file) {
+  if (window.createImageBitmap) {
+    try {
+      const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+      return { src: bmp, w: bmp.width, h: bmp.height, release: () => bmp.close && bmp.close() };
+    } catch {}
+  }
+  let url = null;
+  try {
+    url = URL.createObjectURL(file);
+    const im = await imgFromUrl(url);
+    return { src: im, w: im.naturalWidth, h: im.naturalHeight, release: () => URL.revokeObjectURL(url) };
+  } catch { if (url) URL.revokeObjectURL(url); }
+  const im = await imgFromUrl(await readAsDataUrl(file));
+  return { src: im, w: im.naturalWidth, h: im.naturalHeight, release: () => {} };
+}
+function openFailMsg(f) {
+  return isHeic(f) ? `“${f.name}” está em HEIC, formato que este navegador não abre. No iPhone, ative Ajustes › Câmera › Formatos › Mais Compatível, ou envie como JPG.` : `Não consegui abrir “${f.name || "essa foto"}”. Use JPG, PNG ou WebP.`;
+}
+async function openFile(file) {
+  if (!isImageFile(file)) { toast("Esse arquivo não é uma imagem. Use JPG, PNG ou WebP."); return; }
+  try {
+    const im = await loadImage(file);
+    const base = (file.name || "foto").replace(/\.[^.]+$/, "") || "foto";
+    setSource(im.src, im.w, im.h, base, file.name || "foto");
+  } catch { toast(openFailMsg(file)); }
+}
+$("#fileIn").addEventListener("change", e => { openFile(e.target.files[0]); e.target.value = ""; });
+["openBtn", "batchAdd"].forEach(id => $("#" + id).addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#" + id).click(); } }));
+const stage = $("#stage");
+stage.addEventListener("dragover", e => { e.preventDefault(); stage.classList.add("drag"); });
+stage.addEventListener("dragleave", () => stage.classList.remove("drag"));
+stage.addEventListener("drop", e => { e.preventDefault(); stage.classList.remove("drag"); openFile(e.dataTransfer.files[0]); });
+document.addEventListener("paste", e => {
+  const fs = [...(e.clipboardData?.files || [])].filter(isImageFile);
+  if (!fs.length) return;
+  if (mode === "batch") addBatchFiles(fs); else openFile(fs[0]);
+});
+
+/* ---------- export ---------- */
+function canvasToBlob(c, type, q) { return new Promise(r => c.toBlob(r, type, q)); }
+function renderFull(src, w, h, st, extraAuto, maxEdge = 0) {
+  let scale = Math.min(1, Math.sqrt(MAX_EXPORT_PX / (w * h)));
+  if (maxEdge) scale = Math.min(scale, maxEdge / Math.max(w, h));
+  const c = orient(src, w, h, st.rot, st.flip, scale);
+  const x = c.getContext("2d", { willReadFrequently: true });
+  const id = x.getImageData(0, 0, c.width, c.height);
+  processPixels(id.data, c.width, c.height, effective(st.adj, st.filter), extraAuto || st.auto, st.crop, Math.min(2, c.width / Math.max(1, proc.width || c.width)) * 0.6 + 0.4);
+  x.putImageData(id, 0, 0);
+  const sx = Math.round(st.crop.x * c.width), sy = Math.round(st.crop.y * c.height);
+  const sw = Math.max(1, Math.round(st.crop.w * c.width)), sh = Math.max(1, Math.round(st.crop.h * c.height));
+  if (sx === 0 && sy === 0 && sw === c.width && sh === c.height) return c;
+  const out = document.createElement("canvas"); out.width = sw; out.height = sh;
+  out.getContext("2d").drawImage(c, sx, sy, sw, sh, 0, 0, sw, sh);
+  return out;
+}
+function triggerDownload(name, blob) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.rel = "noopener";
+  document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+function canShareFiles(files) { try { return !!navigator.canShare && navigator.canShare({ files }); } catch { return false; } }
+// Sharing needs a fresh tap, so finished photos wait in this dialog for the person to choose.
+function showResult(files, zipBlob, zipName) {
+  lastResult = { files, zipBlob, zipName };
+  const n = files.length, share = canShareFiles(files);
+  $("#resTitle").textContent = n === 1 ? "Sua foto está pronta" : `${n} fotos prontas`;
+  $("#resHint").textContent = share
+    ? "Toque em Compartilhar e escolha o Instagram (Feed ou Stories), ou salve no celular para postar depois."
+    : (zipBlob ? "Salve o .zip com todas as fotos." : "Salve no celular para postar.");
+  $("#resShare").hidden = !share;
+  $("#resSave").textContent = zipBlob ? "Baixar .zip" : n === 1 ? "Salvar no celular" : `Salvar as ${n} no celular`;
+  const img = $("#modalImg");
+  if (img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+  img.src = URL.createObjectURL(files[0]);
+  $("#modal").hidden = false;
+}
+$("#resShare").addEventListener("click", async () => {
+  if (!lastResult) return;
+  try { await navigator.share({ files: lastResult.files }); }
+  catch (err) { if (err?.name !== "AbortError") toast("Não deu para compartilhar daqui. Salve no celular e poste pela galeria."); }
+});
+$("#resSave").addEventListener("click", async () => {
+  if (!lastResult) return;
+  if (lastResult.zipBlob) { triggerDownload(lastResult.zipName, lastResult.zipBlob); return; }
+  for (const f of lastResult.files) { triggerDownload(f.name, f); await new Promise(r => setTimeout(r, 450)); }
+  toast(lastResult.files.length === 1 ? "Foto salva em Downloads." : "Fotos salvas em Downloads. Se o Chrome perguntar, permita vários downloads.");
+});
+$("#exportBtn").addEventListener("click", async () => {
+  if (!source) return;
+  const btn = $("#exportBtn"); btn.disabled = true; btn.textContent = "Gerando…";
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const fmt = $("#fmt").value;
+    const c = renderFull(source, srcW, srcH, state);
+    const blob = await canvasToBlob(c, fmt === "png" ? "image/png" : "image/jpeg", 0.92);
+    const name = `${fileName}-revelada.${fmt}`;
+    showResult([new File([blob], name, { type: blob.type })]);
+  } catch { toast("Não consegui gerar a foto. Tente uma imagem menor."); }
+  btn.disabled = false; btn.textContent = "Salvar foto";
+});
+$("#modalClose").addEventListener("click", () => { $("#modal").hidden = true; });
+
+/* ---------- batch ---------- */
+let mode = "single";
+const COARSE = (() => { try { return matchMedia("(pointer: coarse)").matches; } catch { return false; } })();
+const PROFILE = { intensity: 100, levels: true, wb: true, exposure: true, filter: "esporte", manual: false, crop: "4:5", size: "w1080", format: "jpg", quality: 92 };
+const DEFAULT_OPTS = { ...PROFILE, pack: COARSE ? "each" : "zip", naming: "suffix", text: "-post" };
+const CROPS = { none: 0, "4:5": 4 / 5, "1:1": 1, "9:16": 9 / 16, "16:9": 16 / 9, "3:2": 3 / 2 };
+const batch = { items: [], opts: loadOpts(), nextId: 1, running: false };
+function loadOpts() { try { return { ...DEFAULT_OPTS, ...JSON.parse(localStorage.getItem("revelador-lote-v3") || "{}") }; } catch { return { ...DEFAULT_OPTS }; } }
+function saveOpts() { try { localStorage.setItem("revelador-lote-v3", JSON.stringify(batch.opts)); } catch {} }
+const MIME = { jpg: "image/jpeg", webp: "image/webp", png: "image/png" };
+const EXT = { "image/jpeg": "jpg", "image/webp": "webp", "image/png": "png" };
+
+function setMode(m) {
+  mode = m;
+  $("#singleMode").hidden = m !== "single"; $("#singleActions").hidden = m !== "single";
+  $("#batchMode").hidden = m !== "batch";
+  $("#modeSingle").setAttribute("aria-selected", m === "single"); $("#modeBatch").setAttribute("aria-selected", m === "batch");
+  try { localStorage.setItem("revelador-modo", m); } catch {}
+  if (m === "batch") { syncManualHint(); renderAllItems(); }
+  else queueRender();
+}
+$("#modeSingle").addEventListener("click", () => setMode("single"));
+$("#modeBatch").addEventListener("click", () => setMode("batch"));
+$("#goBatch").addEventListener("click", () => { setMode("batch"); window.scrollTo(0, 0); });
+
+for (const [k, f] of Object.entries(FILTERS)) { const o = document.createElement("option"); o.value = k; o.textContent = f.name; $("#bFilter").append(o); }
+
+function fmtEV(b) { return (b > 0 ? "+" : b < 0 ? "−" : "") + Math.abs(b / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " EV"; }
+
+function batchSettings(item) {
+  const o = batch.opts;
+  const which = ["levels", "wb", "exposure"].filter(k => o[k]);
+  const key = which.join();
+  let r = item.cache[key];
+  if (!r) { r = which.length ? computeAuto(item.base.data, which) : { auto: NEUTRAL_AUTO() }; item.cache[key] = r; }
+  const t = o.intensity / 100;
+  const auto = { lo: r.auto.lo.map(v => v * t), hi: r.auto.hi.map(v => 255 - (255 - v) * t), wb: r.auto.wb.map(v => 1 + (v - 1) * t), tags: [] };
+  const adj = o.manual ? { ...state.adj } : { ...defaultState().adj };
+  const ev = o.exposure && r.brightness != null ? Math.round(r.brightness * t) : 0;
+  adj.brightness += ev;
+  if (which.length) { adj.contrast += Math.round(10 * t); adj.saturation += Math.round(14 * t); }
+  const cast = Math.max(...auto.wb.map(v => Math.abs(1 - v)));
+  let crop = item.crops[o.crop];
+  if (!crop) { crop = CROPS[o.crop] ? smartCrop(item.base, CROPS[o.crop]) : { x: 0, y: 0, w: 1, h: 1 }; item.crops[o.crop] = crop; }
+  return { st: { ...defaultState(), adj, filter: o.filter, crop }, auto, ev, cast, crop };
+}
+
+function renderItem(item) {
+  const p = batchSettings(item);
+  const W = item.base.width, H = item.base.height;
+  item.out = new ImageData(new Uint8ClampedArray(item.base.data), W, H);
+  processPixels(item.out.data, W, H, effective(p.st.adj, p.st.filter), p.auto, p.crop);
+  const c = item.ctx.canvas;
+  item.rect = [Math.round(p.crop.x * W), Math.round(p.crop.y * H), Math.max(1, Math.round(p.crop.w * W)), Math.max(1, Math.round(p.crop.h * H))];
+  if (c.width !== item.rect[2] || c.height !== item.rect[3]) { c.width = item.rect[2]; c.height = item.rect[3]; }
+  paintItem(item, item.showingOriginal ? item.base : item.out);
+  const bits = [];
+  if (batch.opts.exposure) bits.push(fmtEV(p.ev));
+  if (batch.opts.wb) bits.push(p.cast > 0.04 ? "cor corrigida" : "cor neutra");
+  bits.push(`${item.w.toLocaleString("pt-BR")}×${item.h.toLocaleString("pt-BR")}`);
+  item.meta.textContent = bits.join(" · ");
+}
+function paintItem(item, img) { const [x, y, w, h] = item.rect; item.ctx.putImageData(img, -x, -y, x, y, w, h); }
+let batchTimer = 0;
+function renderAllItems() { clearTimeout(batchTimer); batchTimer = setTimeout(() => batch.items.forEach(renderItem), 60); }
+
+function makeCard(item) {
+  const fig = document.createElement("figure"); fig.className = "bcard on";
+  fig.innerHTML = `<div class="thumb"><canvas></canvas><div class="badge-before" hidden>Original</div></div>
+    <figcaption><label class="name"><input type="checkbox" checked><span></span></label><span class="meta"></span>
+    <div class="row"><button class="mini" data-act="edit">Abrir no editor</button><button class="mini" data-act="remove">Remover</button></div></figcaption>`;
+  const c = fig.querySelector("canvas"); c.width = item.base.width; c.height = item.base.height;
+  item.ctx = c.getContext("2d"); item.meta = fig.querySelector(".meta"); item.el = fig;
+  fig.querySelector(".name span").textContent = item.file.name; fig.querySelector(".name").title = item.file.name;
+  const cb = fig.querySelector("input");
+  cb.addEventListener("change", () => { item.include = cb.checked; fig.classList.toggle("on", cb.checked); fig.classList.toggle("off", !cb.checked); syncBatchUI(); });
+  const thumb = fig.querySelector(".thumb"), badge = fig.querySelector(".badge-before");
+  const show = orig => { item.showingOriginal = orig; paintItem(item, orig ? item.base : item.out); badge.hidden = !orig; };
+  thumb.addEventListener("pointerdown", e => { e.preventDefault(); show(true); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(t => thumb.addEventListener(t, () => item.showingOriginal && show(false)));
+  fig.querySelector('[data-act="edit"]').addEventListener("click", () => { openFile(item.file); setMode("single"); window.scrollTo(0, 0); });
+  fig.querySelector('[data-act="remove"]').addEventListener("click", () => { batch.items = batch.items.filter(i => i !== item); fig.remove(); syncBatchUI(); });
+  $("#batchGrid").append(fig);
+}
+
+async function addBatchFiles(files) {
+  const all = [...(files || [])];
+  const imgs = all.filter(isImageFile);
+  if (!imgs.length) { toast(all.length ? "Nenhuma imagem encontrada nesses arquivos. Use JPG, PNG ou WebP." : "Nenhum arquivo chegou. Tente de novo pelo botão “Adicionar fotos”."); return; }
+  const failed = [];
+  const status = $("#batchLoad");
+  for (let n = 0; n < imgs.length; n++) {
+    const f = imgs[n];
+    status.hidden = false; status.textContent = `Lendo foto ${n + 1} de ${imgs.length}…`;
+    try {
+      const im = await loadImage(f);
+      const w = im.w, h = im.h;
+      const small = orient(im.src, w, h, 0, false, Math.min(1, 480 / Math.max(w, h)));
+      im.release();
+      const base = small.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, small.width, small.height);
+      const item = { id: batch.nextId++, file: f, w, h, base, include: true, cache: {}, crops: {} };
+      batch.items.push(item); makeCard(item); renderItem(item); syncBatchUI();
+      await new Promise(r => setTimeout(r, 0));
+    } catch { failed.push(f); }
+  }
+  status.hidden = true;
+  if (failed.length === 1) toast(openFailMsg(failed[0]));
+  else if (failed.length) toast(`${failed.length} fotos não abriram${failed.some(isHeic) ? " (formato HEIC). No iPhone, ative Ajustes › Câmera › Formatos › Mais Compatível" : ". Use JPG, PNG ou WebP"}.`);
+}
+
+function outName(item, index, used) {
+  const o = batch.opts, ext = o.format;
+  const clean = s => s.replace(/[\\/:*?"<>|]+/g, "-").trim();
+  let base = o.naming === "seq"
+    ? `${clean(o.text) || "foto"}-${String(index + 1).padStart(3, "0")}`
+    : clean(item.file.name.replace(/\.[^.]+$/, "")) + clean(o.text);
+  let name = `${base}.${ext}`, n = 2;
+  while (used.has(name)) name = `${base}-${n++}.${ext}`;
+  used.add(name);
+  return name;
+}
+
+function syncBatchUI() {
+  const o = batch.opts, n = batch.items.length, sel = batch.items.filter(i => i.include).length;
+  $("#batchEmpty").hidden = n > 0; $("#batchGrid").hidden = n === 0;
+  $("#batchCount").textContent = n === 0 ? "Nenhuma foto no lote" : `${n} foto${n > 1 ? "s" : ""} no lote · ${sel} marcada${sel !== 1 ? "s" : ""}`;
+  $("#batchAll").hidden = $("#batchClear").hidden = n === 0;
+  const run = $("#batchRun");
+  run.disabled = sel === 0 || batch.running;
+  if (!batch.running) run.textContent = sel === 0 ? "Corrigir e salvar" : sel === 1 ? "Corrigir e salvar 1 foto" : `Corrigir e salvar ${sel} fotos` + (o.pack === "zip" ? " (.zip)" : "");
+  $("#bCrop").value = o.crop; $("#bPack").value = o.pack;
+  $(".profile").classList.toggle("active", Object.keys(PROFILE).every(k => o[k] === PROFILE[k]));
+  $("#bProfile").textContent = $(".profile").classList.contains("active") ? "Perfil Corrida ativo" : "Usar perfil Corrida";
+  $("#bIntensity").value = o.intensity; $("#oIntensity").textContent = o.intensity + "%";
+  document.querySelectorAll("[data-part]").forEach(b => b.setAttribute("aria-pressed", !!o[b.dataset.part]));
+  $("#bFilter").value = o.filter; $("#bManual").checked = o.manual;
+  $("#bSize").value = String(o.size); $("#bFormat").value = o.format;
+  $("#bQuality").value = o.quality; $("#oQuality").textContent = o.quality + "%";
+  $("#bQualityRow").hidden = o.format === "png";
+  $("#bNaming").value = o.naming; $("#bText").value = o.text;
+  $("#bTextLabel").textContent = o.naming === "seq" ? "Nome base" : "Sufixo";
+  const first = batch.items.find(i => i.include) || { file: { name: "IMG_2041.jpg" } };
+  const used = new Set();
+  const ex = [outName(first, 0, used)];
+  if (o.naming === "seq") ex.push(outName(first, 1, used));
+  $("#bNameEx").textContent = "Exemplo: " + ex.join(", ") + (o.naming === "seq" ? ", …" : "");
+}
+function syncManualHint() {
+  const changed = Object.entries(state.adj).filter(([, v]) => v !== 0);
+  const names = Object.fromEntries(SLIDERS.filter(s => s.length > 1).map(s => [s[0], s[1]]));
+  const h = $("#bManualHint");
+  h.hidden = !batch.opts.manual;
+  h.textContent = changed.length ? "Vai somar: " + changed.map(([k, v]) => `${names[k]} ${v > 0 ? "+" : "−"}${Math.abs(v)}`).join(", ") + "." : "Nenhum ajuste manual feito no modo Uma foto ainda.";
+}
+function setOpt(k, v) { batch.opts[k] = v; saveOpts(); syncBatchUI(); }
+const RENDER_KEYS = ["intensity", "levels", "wb", "exposure", "filter", "manual", "crop"];
+function bindOpt(sel, key, ev, parse = v => v) {
+  $(sel).addEventListener(ev, e => { setOpt(key, parse(e.target.type === "checkbox" ? e.target.checked : e.target.value)); if (RENDER_KEYS.includes(key)) renderAllItems(); if (key === "manual") syncManualHint(); });
+}
+bindOpt("#bIntensity", "intensity", "input", Number);
+bindOpt("#bFilter", "filter", "change");
+bindOpt("#bManual", "manual", "change");
+bindOpt("#bSize", "size", "change");
+bindOpt("#bCrop", "crop", "change");
+bindOpt("#bPack", "pack", "change");
+$("#bProfile").addEventListener("click", () => { Object.assign(batch.opts, PROFILE); saveOpts(); syncBatchUI(); syncManualHint(); renderAllItems(); });
+bindOpt("#bFormat", "format", "change");
+bindOpt("#bQuality", "quality", "input", Number);
+bindOpt("#bNaming", "naming", "change");
+bindOpt("#bText", "text", "input");
+document.querySelectorAll("[data-part]").forEach(b => b.addEventListener("click", () => { setOpt(b.dataset.part, !batch.opts[b.dataset.part]); renderAllItems(); }));
+
+$("#batchIn").addEventListener("change", e => { const fs = [...(e.target.files || [])]; e.target.value = ""; addBatchFiles(fs); });
+$("#batchEmpty").addEventListener("click", () => $("#batchIn").click());
+$("#batchEmpty").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#batchIn").click(); } });
+$("#batchAll").addEventListener("click", () => {
+  const all = batch.items.every(i => i.include);
+  batch.items.forEach(i => { i.include = !all; const cb = i.el.querySelector("input"); cb.checked = !all; i.el.classList.toggle("on", !all); i.el.classList.toggle("off", all); });
+  syncBatchUI();
+});
+$("#batchClear").addEventListener("click", () => { batch.items = []; $("#batchGrid").innerHTML = ""; $("#batchMsg").hidden = $("#batchProg").hidden = true; syncBatchUI(); });
+const bStage = $("#batchStage");
+bStage.addEventListener("dragover", e => { e.preventDefault(); bStage.classList.add("drag"); });
+bStage.addEventListener("dragleave", e => { if (!bStage.contains(e.relatedTarget)) bStage.classList.remove("drag"); });
+bStage.addEventListener("drop", e => { e.preventDefault(); bStage.classList.remove("drag"); addBatchFiles(e.dataTransfer.files); });
+
+$("#batchRun").addEventListener("click", async () => {
+  const items = batch.items.filter(i => i.include);
+  if (!items.length || batch.running) return;
+  const single = items.length === 1;
+  if (!single && batch.opts.pack === "zip" && typeof JSZip === "undefined") { toast("O empacotador de .zip não carregou. Recarregue a página."); return; }
+  batch.running = true; syncBatchUI();
+  const run = $("#batchRun"), prog = $("#batchProg"), bar = prog.querySelector("i"), msg = $("#batchMsg");
+  prog.hidden = false; msg.hidden = false; bar.style.width = "0";
+  const o = batch.opts, zip = single || o.pack === "each" ? null : new JSZip(), used = new Set(), failed = [], outs = [];
+  let ok = 0, lastBlob = null, lastName = "", bytes = 0;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    run.textContent = `Corrigindo ${i + 1} de ${items.length}…`;
+    msg.textContent = it.file.name;
+    await new Promise(r => setTimeout(r, 20));
+    try {
+      const im = await loadImage(it.file);
+      const p = batchSettings(it);
+      const w = im.w, h = im.h, cw = p.crop.w * w, ch = p.crop.h * h;
+      let maxEdge = 0;
+      if (o.size === "w1080") maxEdge = Math.max(w, h) * Math.min(1, 1080 / cw);
+      else if (+o.size) maxEdge = Math.max(w, h) * Math.min(1, +o.size / Math.max(cw, ch));
+      const c = renderFull(im.src, w, h, p.st, p.auto, maxEdge);
+      im.release();
+      const blob = await canvasToBlob(c, MIME[o.format], o.quality / 100);
+      if (!blob) throw new Error("encode");
+      let name = outName(it, i, used);
+      const realExt = EXT[blob.type];
+      if (realExt && realExt !== o.format) name = name.replace(/\.[^.]+$/, "." + realExt);
+      bytes += blob.size; lastBlob = blob; lastName = name;
+      if (zip) zip.file(name, blob);
+      outs.push([name, blob]);
+      ok++;
+    } catch { failed.push(it.file.name); }
+    bar.style.width = ((i + 1) / items.length * 100) + "%";
+  }
+  if (!ok) { msg.textContent = "Nenhuma foto pôde ser processada."; batch.running = false; syncBatchUI(); return; }
+  let out = lastBlob, outFile = lastName;
+  if (zip) { run.textContent = "Empacotando…"; out = await zip.generateAsync({ type: "blob" }); outFile = (o.naming === "seq" && o.text.trim() ? o.text.trim() : "revelador-lote") + ".zip"; }
+  const size = bytes < 1048576 ? Math.max(1, Math.round(bytes / 1024)) + " KB" : (bytes / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " MB";
+  msg.textContent = `${ok} foto${ok > 1 ? "s" : ""} pronta${ok > 1 ? "s" : ""} (${size}).` + (failed.length ? ` Não abriram: ${failed.join(", ")}.` : "");
+  batch.running = false; syncBatchUI();
+  showResult(outs.map(([n, b]) => new File([b], n, { type: b.type })), zip ? out : null, outFile);
+});
+syncBatchUI();
+let startMode = "batch";
+try { startMode = localStorage.getItem("revelador-modo") || "batch"; } catch {}
+if (location.hash === "#lote") startMode = "batch";
+setMode(startMode === "single" ? "single" : "batch");
+
+/* ---------- project photos (the Claude app can't open a file picker inside the page) ---------- */
+let projFiles = null, projFound = [];
+window.claude?.use?.("files").then(f => { projFiles = f; $("#projBtn").hidden = !f; $("#projHint").hidden = !f; }).catch(() => {});
+const importedKey = "revelador-importadas";
+const getImported = () => { try { return new Set(JSON.parse(localStorage.getItem(importedKey) || "[]")); } catch { return new Set(); } };
+const addImported = paths => { try { const s = getImported(); paths.forEach(p => s.add(p)); localStorage.setItem(importedKey, JSON.stringify([...s].slice(-2000))); } catch {} };
+const EXT_MIME = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heic", gif: "image/gif", avif: "image/avif" };
+function sniff(b) {
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return "image/jpeg";
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return "image/png";
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return "image/gif";
+  if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) {
+    const brand = String.fromCharCode(b[8], b[9], b[10], b[11]);
+    if (/avif/.test(brand)) return "image/avif";
+    if (/hei|hev|mif1|msf1/.test(brand)) return "image/heic";
+  }
+  return null;
+}
+const fmtWhen = iso => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
+const fmtSize = n => n < 1048576 ? Math.round(n / 1024) + " KB" : (n / 1048576).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " MB";
+function filesErrMsg(err) {
+  if (err?.code === "not_granted") return "Você não permitiu o acesso às fotos do projeto. Para liberar, use o menu de permissões da página.";
+  if (err?.code === "rate_limited") return "Há outra janela de permissão aberta. Responda a ela e tente de novo.";
+  return "Não consegui ler as fotos do projeto agora. Tente de novo em instantes.";
+}
+async function openProjectPicker() {
+  if (!projFiles) return;
+  const modal = $("#projModal"), list = $("#projList"), msg = $("#projMsg");
+  modal.hidden = false; list.innerHTML = ""; msg.textContent = "Procurando fotos…"; $("#projAdd").disabled = true; $("#projToggle").hidden = true;
+  try {
+    let entries = [], cursor;
+    do { const r = await projFiles.list({ recursive: true, cursor }); entries.push(...r.entries); cursor = r.cursor; } while (cursor && entries.length < 4000);
+    const cands = entries
+      .filter(e => !e.isDirectory && e.size > 2000 && !/(^|\/)\./.test(e.path) && !/\.(md|txt|json|csv|html?|js|css|pdf|zip|py|xlsx?|docx?|pptx?|mp4|mov)$/i.test(e.path))
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+      .slice(0, 120);
+    projFound = [];
+    for (let i = 0; i < cands.length; i++) {
+      const c = cands[i], ext = (c.path.match(/\.([a-z0-9]+)$/i) || [])[1];
+      let mime = ext ? EXT_MIME[ext.toLowerCase()] : null;
+      if (!mime && !ext) { msg.textContent = `Procurando fotos… (${i + 1} de ${cands.length})`; mime = sniff((await projFiles.read(c.path, { length: 16 })).bytes); }
+      if (mime) projFound.push({ ...c, mime });
+    }
+    if (!projFound.length) { msg.textContent = "Nenhuma foto no projeto ainda. Envie as fotos numa mensagem do projeto (pelo clipe de anexar) e toque em Fotos do projeto de novo."; return; }
+    const imported = getImported();
+    msg.textContent = `${projFound.length} foto${projFound.length > 1 ? "s" : ""} encontrada${projFound.length > 1 ? "s" : ""}, as mais recentes primeiro. As que você ainda não trouxe já vêm marcadas.`;
+    projFound.forEach((f, i) => {
+      const old = imported.has(f.path);
+      const row = document.createElement("label");
+      row.innerHTML = `<input type="checkbox" data-i="${i}" ${old ? "" : "checked"}><b></b><span></span>`;
+      row.querySelector("b").textContent = `Foto ${i + 1}${old ? " · já trazida" : ""}`;
+      row.querySelector("span").textContent = [fmtWhen(f.createdAt), fmtSize(f.size)].filter(Boolean).join(" · ");
+      list.append(row);
+    });
+    $("#projToggle").hidden = false; syncProjButtons();
+  } catch (err) { msg.textContent = filesErrMsg(err); }
+}
+function syncProjButtons() {
+  const boxes = [...$("#projList").querySelectorAll("input")], n = boxes.filter(b => b.checked).length;
+  $("#projAdd").disabled = n === 0;
+  $("#projAdd").textContent = n === 1 ? "Adicionar 1 foto" : `Adicionar ${n} fotos`;
+  $("#projToggle").textContent = boxes.length && boxes.every(b => b.checked) ? "Desmarcar todas" : "Marcar todas";
+}
+$("#projList").addEventListener("change", syncProjButtons);
+$("#projToggle").addEventListener("click", () => { const boxes = [...$("#projList").querySelectorAll("input")], all = boxes.every(b => b.checked); boxes.forEach(b => b.checked = !all); syncProjButtons(); });
+$("#projClose").addEventListener("click", () => { $("#projModal").hidden = true; });
+$("#projBtn").addEventListener("click", openProjectPicker);
+$("#projAdd").addEventListener("click", async () => {
+  const picks = [...$("#projList").querySelectorAll("input:checked")].map(b => projFound[+b.dataset.i]);
+  const msg = $("#projMsg"), out = [], done = [];
+  $("#projAdd").disabled = true;
+  for (let i = 0; i < picks.length; i++) {
+    const f = picks[i];
+    msg.textContent = `Trazendo foto ${i + 1} de ${picks.length}…`;
+    try {
+      const parts = []; let off = 0;
+      while (off < f.size) { const r = await projFiles.read(f.path, { offset: off, length: 26214400 }); if (!r.bytes.length) break; parts.push(r.bytes); off += r.bytes.length; }
+      const ext = Object.keys(EXT_MIME).find(k => EXT_MIME[k] === f.mime) || "jpg";
+      const stamp = f.createdAt ? new Date(f.createdAt).toISOString().slice(0, 19).replace(/[-:T]/g, "").replace(/^(\d{8})/, "$1-") : String(i + 1);
+      out.push(new File(parts, `corrida-${stamp}-${i + 1}.${ext}`, { type: f.mime }));
+      done.push(f.path);
+    } catch (err) { msg.textContent = filesErrMsg(err); }
+  }
+  addImported(done);
+  $("#projModal").hidden = true;
+  if (out.length) { setMode("batch"); await addBatchFiles(out); }
+});
+
+/* ---------- installed app: receive photos shared from the gallery, install prompt, offline ---------- */
+async function receiveShared() {
+  if (!new URLSearchParams(location.search).has("shared") || !("caches" in window)) return;
+  window.history.replaceState(null, "", location.pathname);
+  try {
+    const cache = await caches.open("revelador-shared"), files = [];
+    for (const key of await cache.keys()) {
+      const res = await cache.match(key), blob = await res.blob();
+      files.push(new File([blob], decodeURIComponent(res.headers.get("x-name") || "foto.jpg"), { type: blob.type || "image/jpeg" }));
+      await cache.delete(key);
+    }
+    if (files.length) { setMode("batch"); await addBatchFiles(files); toast(files.length === 1 ? "1 foto recebida da galeria." : `${files.length} fotos recebidas da galeria.`); }
+  } catch { toast("Não consegui receber as fotos compartilhadas. Tente pelo botão Adicionar fotos."); }
+}
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("#installBtn").hidden = false; });
+window.addEventListener("appinstalled", () => { $("#installBtn").hidden = true; installEvt = null; toast("Revelador instalado. Ele aparece na tela inicial."); });
+$("#installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $("#installBtn").hidden = true; });
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js", { scope: "../" }).catch(() => {});
+receiveShared();
+
+/* ---------- toast ---------- */
+let toastT = 0;
+function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3800); }
+
+/* ---------- sample photo ---------- */
+function makeSample() {
+  const W = 1500, H = 1000, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const horizon = 640;
+  let sky = g.createLinearGradient(0, 0, 0, horizon);
+  sky.addColorStop(0, "#27508f"); sky.addColorStop(0.55, "#7a9cc8"); sky.addColorStop(1, "#f3b679");
+  g.fillStyle = sky; g.fillRect(0, 0, W, horizon);
+  let glow = g.createRadialGradient(1060, 560, 10, 1060, 560, 380);
+  glow.addColorStop(0, "rgba(255,236,190,1)"); glow.addColorStop(0.12, "rgba(255,214,150,.9)"); glow.addColorStop(1, "rgba(255,180,120,0)");
+  g.fillStyle = glow; g.fillRect(0, 0, W, horizon);
+  for (let i = 0; i < 6; i++) { g.fillStyle = `rgba(255,${220 - i * 10},${200 - i * 12},.18)`; g.beginPath(); g.ellipse(200 + rnd() * 1100, 120 + rnd() * 260, 160 + rnd() * 200, 18 + rnd() * 20, 0, 0, 7); g.fill(); }
+  const layers = [["#6f7fa3", 470, 120], ["#4a5874", 540, 90], ["#2c3646", 600, 60]];
+  layers.forEach(([col, base, amp], li) => {
+    g.fillStyle = col; g.beginPath(); g.moveTo(0, horizon);
+    const p1 = rnd() * 6, p2 = rnd() * 6;
+    for (let x = 0; x <= W; x += 10) g.lineTo(x, base - amp * (0.6 * Math.sin(x / (180 + li * 40) + p1) + 0.4 * Math.sin(x / 63 + p2)) - amp * 0.3 * Math.abs(Math.sin(x / 400 + li)));
+    g.lineTo(W, horizon); g.fill();
+  });
+  g.save(); g.translate(0, horizon * 2); g.scale(1, -1); g.globalAlpha = 0.55; g.drawImage(c, 0, 0, W, horizon, 0, 0, W, horizon); g.restore();
+  let water = g.createLinearGradient(0, horizon, 0, H); water.addColorStop(0, "rgba(40,70,110,.35)"); water.addColorStop(1, "rgba(15,28,45,.85)");
+  g.fillStyle = water; g.fillRect(0, horizon, W, H - horizon);
+  g.strokeStyle = "rgba(255,225,180,.35)"; g.lineWidth = 2;
+  for (let i = 0; i < 40; i++) { const y = horizon + 10 + rnd() * 300, x = 980 + (rnd() - 0.5) * 260 * (1 + (y - horizon) / 200); g.beginPath(); g.moveTo(x, y); g.lineTo(x + 30 + rnd() * 60, y); g.stroke(); }
+  g.fillStyle = "#16241b";
+  for (let i = 0; i < 14; i++) {
+    const x = rnd() * 420 - 40, hgt = 220 + rnd() * 260, base = horizon + 40 + rnd() * 30, wd = 50 + rnd() * 40;
+    g.beginPath(); g.moveTo(x, base - hgt); g.lineTo(x - wd, base); g.lineTo(x + wd, base); g.fill();
+  }
+  g.fillRect(0, horizon + 50, 480, 30);
+  const id = g.getImageData(0, 0, W, H), d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (rnd() - 0.5) * 10;
+    d[i] = 46 + d[i] * 0.5 + n; d[i + 1] = 52 + d[i + 1] * 0.55 + n; d[i + 2] = 58 + d[i + 2] * 0.56 + n;
+  }
+  g.putImageData(id, 0, 0);
+  return c;
+}
+
+const sample = makeSample();
+setSource(sample, sample.width, sample.height, "exemplo", "Foto de exemplo (desbotada de propósito, experimente o ajuste automático)");
+})();
+</script>
+</body>
+</html>

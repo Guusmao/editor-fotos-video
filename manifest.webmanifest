@@ -1,0 +1,31 @@
+{
+  "name": "Revelador · fotos e vídeo",
+  "short_name": "Revelador",
+  "description": "Corrige fotos de corrida em lote e edita vídeos, tudo no celular.",
+  "lang": "pt-BR",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111216",
+  "theme_color": "#111216",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Fotos em lote", "url": "./fotos/", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Editar vídeo", "url": "./video/", "icons": [{ "src": "video/icons/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "files": [{ "name": "media", "accept": ["image/*", "video/*", "audio/*", ".jpg", ".jpeg", ".png", ".webp", ".heic", ".mp4", ".mov"] }]
+    }
+  }
+}
