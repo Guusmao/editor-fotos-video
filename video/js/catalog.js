@@ -121,6 +121,8 @@ export const TEXT_STYLES = [
   { name: 'Âmbar', s: { color: '#1a1206', stroke: 0, bg: '#ffb547', bgAlpha: 1, shadow: 0, bold: true } },
   { name: 'Neon', s: { color: '#7cf7ff', stroke: 2, strokeColor: '#0b3a5a', bg: 'none', shadow: 1, shadowColor: '#00e5ff', bold: true } },
   { name: 'Amarelo', s: { color: '#ffe23d', stroke: 7, strokeColor: '#000000', bg: 'none', shadow: 0, bold: true } },
+  { name: 'Impacto amarelo', s: { color: '#ffe600', stroke: 9, strokeColor: '#000000', bg: 'none', shadow: 0, bold: true, italic: true, font: '"Montserrat", sans-serif', spacing: 1 } },
+  { name: 'Impacto branco', s: { color: '#ffffff', stroke: 9, strokeColor: '#000000', bg: 'none', shadow: 0, bold: true, italic: true, font: '"Montserrat", sans-serif', spacing: 1 } },
   { name: 'Rosa', s: { color: '#ffffff', stroke: 0, bg: '#ff3d8b', bgAlpha: 1, shadow: 0, bold: true } },
 ];
 

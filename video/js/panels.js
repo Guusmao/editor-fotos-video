@@ -813,7 +813,7 @@ PANELS.textstyle = needSel((c) => {
     sub(b, 'Estilos prontos');
     grid(b, TEXT_STYLES, () => false, (st) => { Object.assign(s, st.s); if (st.s.bg === 'none') s.bg = 'none'; live(); openPanel('textstyle'); }, (el, st) => {
       const bg = st.s.bg && st.s.bg !== 'none' ? st.s.bg : 'transparent';
-      el.appendChild(h('b', { style: `font-size:16px;font-weight:800;color:${st.s.color};background:${bg};padding:2px 6px;border-radius:4px;${st.s.stroke ? `-webkit-text-stroke:1px ${st.s.strokeColor}` : ''}` }, 'Aa'));
+      el.appendChild(h('b', { style: `font-size:16px;font-weight:800;${st.s.italic ? 'font-style:italic;' : ''}color:${st.s.color};background:${bg};padding:2px 6px;border-radius:4px;${st.s.stroke ? `-webkit-text-stroke:1px ${st.s.strokeColor}` : ''}` }, 'Aa'));
       el.appendChild(h('span', {}, st.name));
     });
     sub(b, 'Contorno');

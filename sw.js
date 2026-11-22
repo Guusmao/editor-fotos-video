@@ -1,6 +1,6 @@
 // One service worker for both editors: keeps them working offline and sends files
 // shared from the gallery to the right one (photos to /fotos/, anything with video or audio to /video/).
-const VERSION = 'estudio-v2';
+const VERSION = 'estudio-v3';
 const RUNTIME = 'estudio-runtime';
 const SHARED_PHOTOS = 'revelador-shared';
 const SHELL = [
