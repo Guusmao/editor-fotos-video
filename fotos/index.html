@@ -4,47 +4,48 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Corrige fotos de corrida em lote e deixa prontas para postar.">
-<meta name="theme-color" content="#2a52d1">
+<meta name="theme-color" content="#25282d">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" type="image/png" href="../icons/icon-192.png">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 <title>Revelador</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
 <style>
 /* Layout: workbench — large stage on the left, a tool rail of stacked sections on the right; stacks on phones. */
 :root {
-  --bg: #eceff3;
-  --surface: #ffffff;
-  --surface-2: #e3e7ed;
-  --fg: #15181e;
-  --muted: #5a6270;
-  --line: #d2d7df;
-  --accent: #2a52d1;
-  --accent-soft: #dfe6fb;
+  /* Race-day palette: bib Tyvek, asphalt, start-line blue. */
+  --bg: #e9ebe8;
+  --surface: #fbfbf9;
+  --surface-2: #e1e4e0;
+  --fg: #16181c;
+  --muted: #585e66;
+  --line: #cfd3cf;
+  --accent: #1f4fd8;
+  --accent-soft: #dde5fb;
   --accent-fg: #ffffff;
-  --stage: #d6dae2;
+  --stage: #2c2f35;
   --hist-r: #d6455a;
   --hist-g: #2f9d62;
   --hist-b: #3a6ee8;
   --hist-l: #8a93a3;
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --radius: 10px;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --radius: 6px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #101217; --surface: #171a21; --surface-2: #222631; --fg: #e7e9ef; --muted: #98a0af;
-    --line: #2b303b; --accent: #86a2ff; --accent-soft: #1f2846; --accent-fg: #0c1230; --stage: #0a0c10;
+    --bg: #25282d; --surface: #30343a; --surface-2: #3a3f46; --fg: #f1f2ee; --muted: #a6abb2;
+    --line: #454b53; --accent: #7f9dff; --accent-soft: #283563; --accent-fg: #0d1638; --stage: #1c1e22;
     --hist-r: #ff6f80; --hist-g: #4fd18c; --hist-b: #6f9bff; --hist-l: #6b7383;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #101217; --surface: #171a21; --surface-2: #222631; --fg: #e7e9ef; --muted: #98a0af;
-  --line: #2b303b; --accent: #86a2ff; --accent-soft: #1f2846; --accent-fg: #0c1230; --stage: #0a0c10;
+  --bg: #25282d; --surface: #30343a; --surface-2: #3a3f46; --fg: #f1f2ee; --muted: #a6abb2;
+  --line: #454b53; --accent: #7f9dff; --accent-soft: #283563; --accent-fg: #0d1638; --stage: #1c1e22;
   --hist-r: #ff6f80; --hist-g: #4fd18c; --hist-b: #6f9bff; --hist-l: #6b7383;
   color-scheme: dark;
 }
@@ -54,13 +55,16 @@ html { -webkit-text-size-adjust: 100%; }
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body { margin: 0; }
 img { max-width: 100%; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; font-variant-numeric: tabular-nums; }
 .app { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 28px; max-width: 1480px; margin: 0 auto; display: grid; gap: 14px; }
 
 header.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
-.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; margin: 0; }
+.brand h1 { font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: 0; margin: 0; }
 .brand span { color: var(--muted); font-size: 13px; }
+.brand h1 { position: relative; background: #fbfbf9; color: #16181c; padding: 12px 16px 6px; border-radius: 4px; border-top: 6px solid var(--accent); box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+.brand h1::before, .brand h1::after { content: ""; position: absolute; top: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.brand h1::before { left: 5px; } .brand h1::after { right: 5px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
 button, .btn { font: inherit; font-weight: 500; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; line-height: 1.2; }
@@ -85,7 +89,7 @@ input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; ma
 .canvas-wrap { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
 #view { display: block; max-width: 100%; max-height: calc(100vh - 190px); height: auto; width: auto; box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 8px 30px rgba(0,0,0,.18); }
 @media (max-width: 900px) { #view { max-height: 62vh; } }
-.badge-before { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; line-height: 1.2; }
+.badge-before { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; }
 .stage-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 8px 14px; font-size: 12px; color: var(--muted); background: var(--surface); border-top: 1px solid var(--line); font-family: var(--font-mono); }
 .stage-foot b { color: var(--fg); font-weight: 500; }
 
@@ -106,7 +110,7 @@ input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; ma
 /* tool rail */
 .rail { display: grid; gap: 12px; min-width: 0; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; min-width: 0; }
-.panel h2 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.panel h2 { font-family: var(--font-display); font-size: 19px; font-weight: 700; margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .panel h2 small { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); }
 .hint { color: var(--muted); font-size: 12.5px; margin: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -126,7 +130,7 @@ input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; ma
 .sl output { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 5.5ch; text-align: right; }
 .sl output.changed { color: var(--accent); }
 .sl input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
-.group-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 4px; }
+.group-label { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--muted); margin-top: 6px; }
 
 #hist { width: 100%; height: 90px; display: block; background: var(--surface-2); border-radius: 6px; }
 
@@ -144,14 +148,14 @@ input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; ma
 .check input { margin-top: 3px; accent-color: var(--accent); }
 button.wide { width: 100%; justify-content: center; padding: 11px 12px; font-size: 14px; }
 
-.batch-stage { background: var(--stage); border-radius: var(--radius); padding: 14px; display: grid; gap: 14px; min-height: 420px; align-content: start; min-width: 0; }
+.batch-stage { background: var(--surface-2); border-radius: var(--radius); padding: 14px; display: grid; gap: 14px; min-height: 420px; align-content: start; min-width: 0; }
 .batch-stage.drag { outline: 2px dashed var(--accent); outline-offset: -8px; }
 .batch-head { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; background: var(--surface); border-radius: 8px; padding: 10px 12px; }
 .batch-title { display: grid; gap: 1px; }
 .batch-empty { cursor: pointer; }
 .batch-empty:hover { border-color: var(--accent); }
 .batch-empty { display: grid; gap: 6px; place-content: center; text-align: center; min-height: 320px; border: 2px dashed var(--line); border-radius: var(--radius); padding: 24px; color: var(--muted); }
-.batch-empty strong { font-family: var(--font-display); font-size: 18px; color: var(--fg); }
+.batch-empty strong { font-family: var(--font-display); font-size: 24px; color: var(--fg); }
 .batch-empty span { max-width: 46ch; margin: 0 auto; }
 .batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .bcard { margin: 0; background: var(--surface); border-radius: 8px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; border: 2px solid transparent; min-width: 0; }
@@ -167,7 +171,7 @@ button.wide { width: 100%; justify-content: center; padding: 11px 12px; font-siz
 .bcard .meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
 .bcard .row { gap: 6px; }
 .mini { font-size: 12px; padding: 4px 8px; }
-.profile { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--surface) 70%); }
+.profile { border-color: var(--accent); border-top-width: 6px; }
 .profile.active #bProfile { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 8px; font-size: 13px; max-width: calc(100% - 32px); z-index: 20; }
 
@@ -185,7 +189,7 @@ button.wide { width: 100%; justify-content: center; padding: 11px 12px; font-siz
 <body>
 <div class="app">
   <header class="bar">
-    <div class="brand"><h1>Revelador</h1><span>editor de fotos pessoal</span></div>
+    <div class="brand"><h1>Revelador</h1><span>Fotos</span></div>
     <button id="installBtn" class="primary" hidden>Instalar app</button>
     <a class="btn" href="../video/" style="text-decoration:none">Vídeo</a>
     <div class="seg" role="tablist" aria-label="Modo">

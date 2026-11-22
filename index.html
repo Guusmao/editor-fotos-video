@@ -4,87 +4,94 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Corrige fotos de corrida em lote e edita vídeos, tudo no celular.">
-<meta name="theme-color" content="#111216">
+<meta name="theme-color" content="#25282d">
 <title>Revelador</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500&display=swap">
 <style>
-/* Launcher: two large doors, one per editor, each in its own app's accent. */
+/* Launcher: each editor is a race bib pinned to asphalt. The bib is the one bold element. */
 :root {
-  --bg: #111216; --surface: #1a1c22; --line: #2a2d36; --fg: #eceef3; --muted: #9aa1ae;
-  --photo: #86a2ff; --photo-soft: #1f2846; --video: #f0a93b; --video-soft: #3a2a12;
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --asphalt: #25282d; --asphalt-2: #30343a; --lane: #e4e6e1; --muted: #a6abb2;
+  --tyvek: #fbfbf9; --ink: #16181c; --ink-soft: #545a62;
+  --photo: #1f4fd8; --video: #f3b61f;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; min-height: 100%; }
-body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+body {
+  background: var(--asphalt); color: var(--lane); font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  /* A single lane line down the left edge, the only decoration on the page. */
+  background-image: linear-gradient(to right, transparent 22px, rgba(228,230,225,.16) 22px, rgba(228,230,225,.16) 26px, transparent 26px);
+}
 main {
-  max-width: 560px; margin: 0 auto; min-height: 100vh; display: grid; align-content: center; gap: 18px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: calc(env(safe-area-inset-top, 0px) + 28px) calc(env(safe-area-inset-bottom, 0px) + 28px);
+  max-width: 520px; margin: 0 auto; min-height: 100vh; display: grid; align-content: center; gap: 22px;
+  padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(env(safe-area-inset-top, 0px) + 32px) calc(env(safe-area-inset-bottom, 0px) + 32px);
 }
-header { display: flex; align-items: center; gap: 12px; }
-header img { width: 44px; height: 44px; border-radius: 11px; }
-h1 { font-family: var(--font-display); font-size: 30px; letter-spacing: -0.02em; margin: 0; line-height: 1.1; }
-header p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
-.door {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
-  padding: 20px 18px; border-radius: 16px; text-decoration: none; color: var(--fg);
-  background: var(--surface); border: 1px solid var(--line);
+header h1 { font-family: var(--font-display); font-weight: 800; font-size: 56px; line-height: .9; margin: 0; }
+header p { margin: 8px 0 0; color: var(--muted); max-width: 30ch; }
+
+.bib {
+  position: relative; display: block; text-decoration: none; color: var(--ink); background: var(--tyvek);
+  border-radius: 5px; padding: 22px 22px 18px; border-top: 14px solid var(--band);
+  box-shadow: 0 2px 0 rgba(0,0,0,.25);
+  transition: transform .18s ease;
 }
-.door:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
-.door .glyph { width: 52px; height: 52px; border-radius: 13px; display: grid; place-items: center; }
-.door.photo .glyph { background: var(--photo-soft); color: var(--photo); }
-.door.video .glyph { background: var(--video-soft); color: var(--video); }
-.door.photo:hover { border-color: var(--photo); }
-.door.video:hover { border-color: var(--video); }
-.door h2 { font-family: var(--font-display); font-size: 21px; margin: 0; }
-.door p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
-.door .go { font-size: 22px; color: var(--muted); }
-.foot { display: grid; gap: 10px; }
+.bib.photo { --band: var(--photo); transform: rotate(-1.2deg); }
+.bib.video { --band: var(--video); transform: rotate(.9deg); }
+.bib:active { transform: rotate(0) scale(.98); }
+.bib:focus-visible { outline: 3px solid var(--lane); outline-offset: 4px; }
+/* Four safety-pin holes, like a real bib. */
+.bib::before, .bib::after {
+  content: ""; position: absolute; top: 8px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--asphalt);
+}
+.bib::before { left: 10px; } .bib::after { right: 10px; }
+.bib .pins { position: absolute; left: 10px; right: 10px; bottom: 8px; height: 9px; pointer-events: none; }
+.bib .pins::before, .bib .pins::after { content: ""; position: absolute; top: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--asphalt); }
+.bib .pins::before { left: 0; } .bib .pins::after { right: 0; }
+.bib h2 { font-family: var(--font-display); font-weight: 800; font-size: 76px; line-height: .85; margin: 0; letter-spacing: -.01em; }
+.bib p { margin: 8px 0 6px; color: var(--ink-soft); font-size: 15px; }
+
+.foot { display: grid; gap: 12px; }
 #installBtn {
-  font: inherit; font-weight: 500; padding: 12px 14px; border-radius: 12px; border: 0; cursor: pointer;
-  background: var(--fg); color: var(--bg);
+  font: inherit; font-weight: 500; padding: 13px 16px; border-radius: 5px; border: 0; cursor: pointer;
+  background: var(--lane); color: var(--ink);
 }
-.note { color: var(--muted); font-size: 13px; margin: 0; text-align: center; }
+#installBtn:focus-visible { outline: 3px solid var(--lane); outline-offset: 3px; }
+.note { color: var(--muted); font-size: 14px; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .bib { transition: none; } }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <img src="icons/icon-192.png" alt="">
-    <div>
-      <h1>Revelador</h1>
-      <p>Fotos e vídeos de corrida, prontos para postar</p>
-    </div>
+    <h1>Revelador</h1>
+    <p>Suas fotos e vídeos de corrida, prontos para postar.</p>
   </header>
 
-  <a class="door photo" href="fotos/">
-    <span class="glyph" aria-hidden="true">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>
-    </span>
-    <span><h2>Fotos</h2><p>Corrige várias fotos de uma vez com o Perfil Corrida</p></span>
-    <span class="go" aria-hidden="true">›</span>
+  <a class="bib photo" href="fotos/">
+    <h2>Fotos</h2>
+    <p>Corrige a leva inteira de uma vez e recorta para o Instagram.</p>
+    <span class="pins" aria-hidden="true"></span>
   </a>
 
-  <a class="door video" href="video/">
-    <span class="glyph" aria-hidden="true">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>
-    </span>
-    <span><h2>Vídeo</h2><p>Corta, legenda, aplica filtros e música</p></span>
-    <span class="go" aria-hidden="true">›</span>
+  <a class="bib video" href="video/">
+    <h2>Vídeo</h2>
+    <p>Corta, legenda e coloca música no seu vídeo.</p>
+    <span class="pins" aria-hidden="true"></span>
   </a>
 
   <div class="foot">
     <button id="installBtn" hidden>Instalar app</button>
-    <p class="note">Tudo roda no seu celular. Nenhuma foto ou vídeo é enviado para servidores.</p>
+    <p class="note">Tudo fica no seu celular. Nenhuma foto ou vídeo é enviado para servidores.</p>
   </div>
 </main>
 <script>
